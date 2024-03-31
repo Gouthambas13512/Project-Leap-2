@@ -123,7 +123,7 @@ def find_lowest_price_store_with_scrapingbee(product_url):
         lowest_price_store = None
 
         # List of additional stores to consider
-        additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.']
+        additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's"]
 
         # Iterate over each offer row
         offer_rows = soup.find_all('tr', class_='sh-osd__offer-row')
@@ -151,9 +151,10 @@ def find_lowest_price_store_with_scrapingbee(product_url):
                 total_price = round(total_price, 2)
 
 
-                if lowest_price is None or total_price < lowest_price:
-                    lowest_price = total_price
-                    lowest_price_store = store_name
+                if is_preferred_store(quality_tag, store_name, additional_stores):
+                    if lowest_price is None or total_price < lowest_price:
+                        lowest_price = total_price
+                        lowest_price_store = store_name
 
         return lowest_price_store, lowest_price
     else:

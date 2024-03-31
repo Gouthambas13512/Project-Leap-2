@@ -31,7 +31,7 @@ for file in input_files:
 #Update Master DB with Blacklissted values
 #OUtput: No ouput. Just updates
 master_db_path = 'Master_DB.csv'
-update_csv_path = 'KeepaExports\Black_Listed_Y.csv'
+update_csv_path = 'ManualCheck.csv'
 
 #**CODE BELOW---------
 #mf.update_BlackList(master_db_path, update_csv_path)
@@ -39,7 +39,7 @@ update_csv_path = 'KeepaExports\Black_Listed_Y.csv'
 
 #4
 #Take manual verified and update MasterV and Database
-input_file = 'KeepaExports\Black_Listed_Y.csv'
+input_file = 'ManualCheck.csv'
 master_db_file = 'Master_DB.csv'
 master_v_file = 'MasterV.csv'
 Black_Listed_Y = 'Black_Listed_Y.csv'  # These are blacklisted Y
@@ -60,7 +60,7 @@ MasterV = 'MasterV.csv'
 master_db = 'Master_DB.csv'
 
 #**CODE BELOW---------
-#mf.update_pricing_concurrently(MasterV, master_db)
+mf.update_pricing_concurrently(MasterV, master_db)
 
 
 

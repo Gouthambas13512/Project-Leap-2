@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def find_lowest_price_store_with_scrapingbee(product_url):
     api_key = '7WX8OW6NE4303BOGNO05RWHKP0COKSO0ZXZDF4Y0FKBZ5G7HDS5276Z1MCV9IU2EFRQC14OCU4AR7VI7'
+    additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com']
     try:
         response = requests.get(
             'https://app.scrapingbee.com/api/v1/',
@@ -24,7 +25,7 @@ def find_lowest_price_store_with_scrapingbee(product_url):
                 'custom_google': 'true'
             }
         )
-
+    
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             lowest_price = None
@@ -56,9 +57,10 @@ def find_lowest_price_store_with_scrapingbee(product_url):
                         total_price = round(total_price, 2)
 
     
-                        if lowest_price is None or total_price < lowest_price:
-                            lowest_price = total_price
-                            lowest_price_store = store_name
+                        if is_preferred_store(quality_tag, store_name, additional_stores):
+                            if lowest_price is None or total_price < lowest_price:
+                                lowest_price = total_price
+                                lowest_price_store = store_name
                 except Exception as inner_exc:
                     # Handle any errors in parsing individual offer rows
                     continue
@@ -70,7 +72,11 @@ def find_lowest_price_store_with_scrapingbee(product_url):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None, None
-    
+
+def is_preferred_store(quality_tag, store_name, additional_stores):
+    is_top_quality = quality_tag and quality_tag.get_text(strip=True) == 'Top Quality Store'
+    is_additional_store = any(store in store_name for store in additional_stores)
+    return is_top_quality or is_additional_store
 
 def calculate_shipping_cost(shipping_text):
     if 'Spend' in shipping_text:
