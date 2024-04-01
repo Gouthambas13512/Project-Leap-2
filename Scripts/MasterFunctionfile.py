@@ -22,7 +22,8 @@ def find_lowest_price_store_with_scrapingbee(product_url):
                 'api_key': api_key,
                 'url': product_url,
                 'render_js': 'true',
-                'custom_google': 'true'
+                'custom_google': 'true',
+                'wait_for': 'a[class*=title]'
             }
         )
     
