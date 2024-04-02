@@ -58,10 +58,12 @@ Black_Listed_Y = 'DataBaseFiles\Black_Listed_Y.csv'  # These are blacklisted Y
 #Tells us if we can list a product. Updates (Amazon_List_price)
 #Here we can use filter_and_export to neglect any brand before running
 #EXPORT: Updates MasterV to itself
-MasterV_Brands_To_Update = 'DataBaseFiles/MasterV.csv'
+MasterV_Brands_To_Update = 'MasterV_test.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
+Output_File = 'MasterV_test.csv'
+max_workers = 50
 #**CODE BELOW---------
-mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db)
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, max_workers, Output_File)
 
 
 #LIST PRODUCTS ON AMAZON

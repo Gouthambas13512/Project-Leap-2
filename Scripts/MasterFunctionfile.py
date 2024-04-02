@@ -81,12 +81,17 @@ def find_lowest_price_store_with_scrapfly(product_url):
             
 
 def find_lowest_price_store_with_scrapingbee(product_url):
-    api_key = '7WX8OW6NE4303BOGNO05RWHKP0COKSO0ZXZDF4Y0FKBZ5G7HDS5276Z1MCV9IU2EFRQC14OCU4AR7VI7'
+    api_key = '7WX8OW6NE4303BOGNO05RWHKP0COKSO0ZXZDF4Y0FKBZ5G7HDS5276Z1MCV9IU2EFRQC14OCU4AR7VI7'  # Use your actual API key
     additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
     
-    # Initialize an error counter
+    # Initialize variables to keep track of the lowest price and its store
+    lowest_price = None
+    lowest_price_store = None
+    # New variables to track any store found, regardless of being a "good" store
+    any_store_found = None
+    any_store_price = None
     error_counter = 0
-    
+
     try:
         response = requests.get(
             'https://app.scrapingbee.com/api/v1/',
@@ -98,14 +103,16 @@ def find_lowest_price_store_with_scrapingbee(product_url):
                 'wait_for': 'a[class*=title]'
             }
         )
-    
+
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            lowest_price = None
-            lowest_price_store = None
+            
+            # Check for "Product not found" title
+            if soup.title and 'Product not found' in soup.title.text:
+                return "OOS", None
 
             offer_rows = soup.find_all('tr', class_='sh-osd__offer-row')
-
+            
             for row in offer_rows:
                 try:
                     store_name_tag = row.find('a', class_='b5ycib shntl')
@@ -116,7 +123,7 @@ def find_lowest_price_store_with_scrapingbee(product_url):
                     if store_name_tag and price_tag and shipping_info:
                         store_name_raw = store_name_tag.get_text(strip=True)
                         store_name = store_name_raw.split('Opens')[0].strip()
-                        price_str = price_tag.get_text(strip=True).replace('$', '').replace(',', '').replace('\xa0€', '').strip()
+                        price_str = price_tag.get_text(strip=True).replace('$', '').replace(',', '').strip()
                         price = float(price_str)
 
                         if 'amazon' in store_name.lower():
@@ -128,31 +135,32 @@ def find_lowest_price_store_with_scrapingbee(product_url):
                         total_price = price + shipping_cost
                         total_price = round(total_price, 2)
 
+                        # Track any store found
+                        if any_store_found is None or total_price < any_store_price:
+                            any_store_found = store_name
+                            any_store_price = total_price
+
                         if is_preferred_store(quality_tag, store_name, additional_stores):
                             if lowest_price is None or total_price < lowest_price:
                                 lowest_price = total_price
                                 lowest_price_store = store_name
                 except Exception as inner_exc:
-                    # Continue loop but increment error counter for each caught exception within loop
                     error_counter += 1
                     continue
 
-            if lowest_price_store is None and lowest_price is None:
-                # Increment error counter if no store or price was found
-                error_counter += 1
+            # Check if a "good" store was not found but any store was found
+            if lowest_price_store is None and any_store_found:
+                lowest_price_store = any_store_found
+                lowest_price = None  # Set price to None as per requirement
 
-            print(f"Total errors encountered: {error_counter}")
             return lowest_price_store, lowest_price
         else:
-            error_counter += 1
             print(f"ScrapingBee request failed with status code {response.status_code}")
-            print(f"Total errors encountered: {error_counter}")
             return None, None
     except Exception as e:
-        error_counter += 1
         print(f"An error occurred: {e}")
-        print(f"Total errors encountered: {error_counter}")
         return None, None
+
 
 def is_preferred_store(quality_tag, store_name, additional_stores):
     is_top_quality = quality_tag and quality_tag.get_text(strip=True) == 'Top Quality Store'
@@ -541,11 +549,11 @@ def process_row_with_scrapingbee(row, index):
     return (index, update_info)
 
 
-def update_pricing_concurrently(Curr_Listed_path, master_db_path):
+def update_pricing_concurrently(Curr_Listed_path, master_db_path, max_workers, Output_File):
     Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
-    with ThreadPoolExecutor(max_workers=50) as executor:
+    with ThreadPoolExecutor(max_workers) as executor:
         # Submit tasks for each row
         futures = [executor.submit(process_row_with_scrapingbee, row, index) for index, row in Curr_Listed.iterrows()]
 
@@ -557,7 +565,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path):
                 Curr_Listed.at[index, key] = value
 
     # After processing, save the updated DataFrames
-    Curr_Listed.to_csv('MasterV.csv', index=False)
+    Curr_Listed.to_csv(Output_File, index=False)
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety
 
