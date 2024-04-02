@@ -26,6 +26,7 @@ def find_lowest_price_store_with_scrapfly(product_url):
             country="us",
             asp=True,
             render_js=True,
+            rendering_wait=5000,
             url=product_url
         ))
         
@@ -64,6 +65,7 @@ def find_lowest_price_store_with_scrapfly(product_url):
                                 lowest_price_store = store_name
                 except Exception as inner_exc:
                     error_counter += 1
+                    print(f"Error processing row: {inner_exc}")
                     continue
 
             print(f"Total errors encountered: {error_counter}")
@@ -71,13 +73,16 @@ def find_lowest_price_store_with_scrapfly(product_url):
         else:
             error_counter += 1
             print(f"Scrapfly request failed with status code {result.status_code}")
+            print(f"Total errors encountered: {error_counter}")
 
     except Exception as e:
         error_counter += 1
         print(f"An error occurred: {e}")
+        print(f"Total errors encountered: {error_counter}")
 
     print(f"Total errors encountered: {error_counter}")
     return None, None
+
             
 
 def find_lowest_price_store_with_scrapingbee(product_url):
@@ -515,7 +520,7 @@ def process_row_with_scrapingbee(row, index):
     if pd.notna(product_url):
         # Attempt to find the lowest price store using the given product URL
         try:
-            lowest_price_store, price = mf.find_lowest_price_store_with_scrapingbee(product_url)
+            lowest_price_store, price = mf.find_lowest_price_store_with_scrapfly(product_url)
 
             if price is not None:
                 # Calculate the Min Price, Max Price, and Amazon List Price based on the retrieved price
@@ -545,7 +550,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path):
     Curr_Listed = pd.read_csv(Curr_Listed_path).head(100)
     master_db = pd.read_csv(master_db_path)
 
-    with ThreadPoolExecutor(max_workers=30) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         # Submit tasks for each row
         futures = [executor.submit(process_row_with_scrapingbee, row, index) for index, row in Curr_Listed.iterrows()]
 

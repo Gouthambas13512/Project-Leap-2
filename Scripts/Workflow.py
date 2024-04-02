@@ -61,8 +61,8 @@ Black_Listed_Y = 'DataBaseFiles\Black_Listed_Y.csv'  # These are blacklisted Y
 MasterV_Brands_To_Update = 'DataBaseFiles/MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 #**CODE BELOW---------
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db)
-mf.find_lowest_price_store_with_scrapfly("https://www.google.com/shopping/product/16664858975410092086/offers?q=0195907579008&prds=cid:16664858975410092086,cond:1")
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db)
+
 
 #LIST PRODUCTS ON AMAZON
 
