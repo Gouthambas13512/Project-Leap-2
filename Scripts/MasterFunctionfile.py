@@ -549,7 +549,7 @@ def process_row_with_scrapingbee(row, index):
     return (index, update_info)
 
 
-def update_pricing_concurrently(Curr_Listed_path, master_db_path, max_workers, Output_File):
+def update_pricing_concurrently(Curr_Listed_path, master_db_path, max_workers, Output_File_Price_Update):
     Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
@@ -565,7 +565,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path, max_workers, O
                 Curr_Listed.at[index, key] = value
 
     # After processing, save the updated DataFrames
-    Curr_Listed.to_csv(Output_File, index=False)
+    Curr_Listed.to_csv(Output_File_Price_Update, index=False)
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety
 

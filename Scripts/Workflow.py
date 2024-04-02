@@ -60,10 +60,10 @@ Black_Listed_Y = 'DataBaseFiles\Black_Listed_Y.csv'  # These are blacklisted Y
 #EXPORT: Updates MasterV to itself
 MasterV_Brands_To_Update = 'MasterV_test.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
-Output_File = 'MasterV_test.csv'
+Output_File_Price_Update = 'MasterV_test.csv'
 max_workers = 50
 #**CODE BELOW---------
-mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, max_workers, Output_File)
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, max_workers, Output_File_Price_Update)
 
 
 #LIST PRODUCTS ON AMAZON
