@@ -26,7 +26,7 @@ def find_lowest_price_store_with_scrapfly(product_url):
             country="us",
             asp=True,
             render_js=True,
-            rendering_wait=5000,
+            rendering_wait=3000,
             url=product_url
         ))
         
@@ -68,19 +68,14 @@ def find_lowest_price_store_with_scrapfly(product_url):
                     print(f"Error processing row: {inner_exc}")
                     continue
 
-            print(f"Total errors encountered: {error_counter}")
             return lowest_price_store, lowest_price
         else:
             error_counter += 1
             print(f"Scrapfly request failed with status code {result.status_code}")
-            print(f"Total errors encountered: {error_counter}")
-
     except Exception as e:
         error_counter += 1
         print(f"An error occurred: {e}")
-        print(f"Total errors encountered: {error_counter}")
 
-    print(f"Total errors encountered: {error_counter}")
     return None, None
 
             
@@ -547,7 +542,7 @@ def process_row_with_scrapingbee(row, index):
 
 
 def update_pricing_concurrently(Curr_Listed_path, master_db_path):
-    Curr_Listed = pd.read_csv(Curr_Listed_path).head(100)
+    Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
     with ThreadPoolExecutor(max_workers=5) as executor:
