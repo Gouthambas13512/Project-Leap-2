@@ -18,7 +18,7 @@ for file in input_files:
         mf.merge_csv(file)
     else:
         print(f"File '{file}' not found.")
-   '''  
+'''
 
 #2
 #Run Google_Scrapping.py with the output of #1
@@ -30,7 +30,7 @@ for file in input_files:
 #Update MasterDB link and BlackList from ManualCheck
 #Output: No ouput. Just updates MasterDB
 master_db_path = 'DataBaseFiles\Master_DB.csv'
-update_csv_path = 'ManualCheck.csv'
+update_csv_path = 'ManualCheck_birkenstock.csv'
 #**CODE BELOW---------
 #TRY THIS NEW CODE
 #mf.update_master_db_w_manualcheck(master_db_path, update_csv_path)
@@ -40,7 +40,7 @@ update_csv_path = 'ManualCheck.csv'
 
 #4
 #Take manual verified and update MasterV and Database
-input_file = 'ManualCheck.csv'
+input_file = 'ManualCheck_birkenstock.csv'
 master_db_file = 'DataBaseFiles\Master_DB.csv'
 master_v_file = 'DataBaseFiles\MasterV.csv'
 Black_Listed_Y = 'DataBaseFiles\Black_Listed_Y.csv'  # These are blacklisted Y

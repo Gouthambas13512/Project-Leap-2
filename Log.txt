@@ -1,1 +1,4 @@
 Date: Required: MasterV # of prodicts, # of Productsmanual scanned and upload, what is next step
+April 1, 2024: Made Birkenstop Filefor scan, MasterV #1648, Next Step: Optimizing the scrapping, and redo the logic for manual scan
+April 2, 2024: Made Nike(Only FBM) file for scan, Saif unable to complete birkenstock sheet within 26 hrs window so no new items added to MasterV in morning, show maliha how to do manual scanning from RA and upload new items if saif deliver birkenstock file.
+April 3, 2024: Add birkenstock items to MasterV(895) have 1K more to add will add when the code is fixed., MasterV #2534, upload new MasterV on amazon, Add Nike items if manualscanners deliver it by 12 AM today.

@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
+import MasterFunctionfile as mf
 
 # Function to create Google Shopping link
 def create_google_shopping_link(upc, title):
@@ -251,7 +252,7 @@ def process_row_with_scrapingbee(index, row, master_db, existing_output):
         }
         # Scrape store and price data for the existing ASIN
         google_link = create_google_shopping_link(row['Product Codes: UPC'], row['Title'])
-        lowest_price_store, lowest_price = find_lowest_price_store_with_scrapingbee(existing_data['Extraction_Link'])
+        lowest_price_store, lowest_price = mf.find_lowest_price_store_with_scrapfly(existing_data['Extraction_Link'])
         existing_data['Store'] = lowest_price_store if lowest_price_store else "Not Found"
         existing_data['Price'] = lowest_price if lowest_price else pd.NA
         return existing_data
@@ -260,7 +261,7 @@ def process_row_with_scrapingbee(index, row, master_db, existing_output):
         google_link = create_google_shopping_link(row['Product Codes: UPC'], row['Title'])
         extracted_href = extract_href(google_link, master_db)
         if extracted_href:
-            lowest_price_store, lowest_price = find_lowest_price_store_with_scrapingbee(extracted_href)
+            lowest_price_store, lowest_price = mf.find_lowest_price_store_with_scrapfly(extracted_href)
             return {
                 'index': index,
                 'Extraction_Link': extracted_href,
@@ -316,7 +317,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Load the existing Master_DB file
-    master_db_path = 'Master_DB.csv'
+    master_db_path = "DataBaseFiles\Master_DB.csv"
     if os.path.exists(master_db_path):
         master_db = pd.read_csv(master_db_path)
     else:
@@ -357,7 +358,7 @@ if __name__ == "__main__":
     # Process all rows from the beginning
     rows_to_process = spreadsheet.head(rows_to_run)
 
-    with ThreadPoolExecutor(max_workers=30) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         # Use ThreadPoolExecutor to process rows concurrently
         future_to_index = {executor.submit(process_row_with_scrapingbee, index, row, master_db, existing_output): index for index, row in rows_to_process.iterrows()}
 

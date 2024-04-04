@@ -10,7 +10,73 @@ import requests
 from bs4 import BeautifulSoup
 import MasterFunctionfile as mf
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
 
+def find_lowest_price_store_with_scrapfly(product_url):
+    api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
+    additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
+    
+    scrapfly = ScrapflyClient(key=api_key)
+    
+    error_counter = 0
+    
+    try:
+        result: ScrapeApiResponse = scrapfly.scrape(ScrapeConfig(
+            tags=["player", "project:default"],
+            country="us",
+            asp=True,
+            render_js=True,
+            rendering_wait=3000,
+            url=product_url
+        ))
+        
+        if result.status_code == 200:
+            soup = BeautifulSoup(result.content, 'html.parser')
+            lowest_price = None
+            lowest_price_store = None
+
+            offer_rows = soup.find_all('tr', class_='sh-osd__offer-row')
+
+            for row in offer_rows:
+                try:
+                    store_name_tag = row.find('a', class_='b5ycib shntl')
+                    quality_tag = row.find('span', class_='P6GC4b')
+                    price_tag = row.find('span', class_='g9WBQb fObmGc')
+                    shipping_info = row.find('td', class_='SH30Lb yGibJf')
+
+                    if store_name_tag and price_tag and shipping_info:
+                        store_name_raw = store_name_tag.get_text(strip=True)
+                        store_name = store_name_raw.split('Opens')[0].strip()
+                        price_str = price_tag.get_text(strip=True).replace('$', '').replace(',', '').replace('\xa0€', '').strip()
+                        price = float(price_str)
+
+                        if 'amazon' in store_name.lower():
+                            continue
+
+                        shipping_text = shipping_info.get_text(strip=True).lower()
+                        shipping_cost = calculate_shipping_cost(shipping_text)
+
+                        total_price = price + shipping_cost
+                        total_price = round(total_price, 2)
+
+                        if is_preferred_store(quality_tag, store_name, additional_stores):
+                            if lowest_price is None or total_price < lowest_price:
+                                lowest_price = total_price
+                                lowest_price_store = store_name
+                except Exception as inner_exc:
+                    error_counter += 1
+                    print(f"Error processing row: {inner_exc}")
+                    continue
+
+            return lowest_price_store, lowest_price
+        else:
+            error_counter += 1
+            print(f"Scrapfly request failed with status code {result.status_code}")
+    except Exception as e:
+        error_counter += 1
+        print(f"An error occurred: {e}")
+
+    return None, None
 
 def find_lowest_price_store_with_scrapingbee(product_url):
     api_key = '7WX8OW6NE4303BOGNO05RWHKP0COKSO0ZXZDF4Y0FKBZ5G7HDS5276Z1MCV9IU2EFRQC14OCU4AR7VI7'
@@ -435,13 +501,13 @@ def process_row_with_scrapingbee(row, index):
     if pd.notna(product_url):
         # Attempt to find the lowest price store using the given product URL
         try:
-            lowest_price_store, price = mf.find_lowest_price_store_with_scrapingbee(product_url)
+            lowest_price_store, price = find_lowest_price_store_with_scrapfly(product_url)
 
             if price is not None:
                 # Calculate the Min Price, Max Price, and Amazon List Price based on the retrieved price
                 min_price = price * MIN_ROI
                 max_price = price * MAX_ROI
-                amazon_list_price = mf.calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
+                amazon_list_price = calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
 
                 # Update the row information with the calculated values
                 update_info.update({
@@ -465,7 +531,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path):
     Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
-    with ThreadPoolExecutor(max_workers=30) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         # Submit tasks for each row
         futures = [executor.submit(process_row_with_scrapingbee, row, index) for index, row in Curr_Listed.iterrows()]
 
