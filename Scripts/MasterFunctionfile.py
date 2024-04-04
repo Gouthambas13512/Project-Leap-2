@@ -613,11 +613,11 @@ def update_extraction_links(csv_file):
 
             # Append the row (excluding PID column) to MasterDB.csv
             row_without_pid = row.drop('PID')
-            with open('Master_DB copy.csv', 'a') as f:
+            with open('DataBaseFiles\MasterV copy.csv', 'a') as f:
                 f.write(','.join(map(str, row_without_pid)) + '\n')
 
             # Append the row (excluding PID column) to MasterV.csv
-            with open('MasterV copy.csv', 'a') as f:
+            with open('DataBaseFiles\Master_DB copy.csv', 'a') as f:
                 f.write(','.join(map(str, row_without_pid)) + '\n')
 
     # Save the updated DataFrame back to the original CSV file

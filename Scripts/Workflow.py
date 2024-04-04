@@ -61,7 +61,7 @@ Black_Listed_Y = 'DataBaseFiles\Black_Listed_Y.csv'  # These are blacklisted Y
 MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles\Master_DB.csv'
 #**CODE BELOW---------
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db)
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db)
 
 #LIST PRODUCTS ON AMAZON
 
@@ -97,7 +97,7 @@ UserG = ["Kate Spade", "Kate Spade New York", "New Balance", "Steve Madden", "TH
 #mf.filter_and_export("DataBaseFiles\MasterV.csv", UserG, "Goutham[DATE].csv")
 
 
-mf.update_extraction_links('ManualCheck_Nike.csv')
+#mf.update_extraction_links('ManualCheck_birkenstock.csv')
 
 
 
