@@ -596,3 +596,33 @@ def filter_and_export(csv_file, brand_names, output_filename):
         print(f"File '{csv_file}' not found.")
 
 
+import pandas as pd
+
+def update_extraction_links(csv_file):
+    # Load CSV file into a pandas DataFrame
+    df = pd.read_csv(csv_file)
+
+    # Iterate over each row in the DataFrame
+    for index, row in df.iterrows():
+        pid = row['PID']
+        if pid.lower() != 'none':  # Check if PID is not 'none'
+            upc = row['Product Codes: UPC']
+            new_link = f'https://www.google.com/shopping/product/{pid}/offers?q={upc}&prds=cid:{pid},cond:1'
+            # Update the 'Extraction_Link' column with the new_link
+            df.at[index, 'Extraction_Link'] = new_link
+
+            # Append the row (excluding PID column) to MasterDB.csv
+            row_without_pid = row.drop('PID')
+            with open('Master_DB copy.csv', 'a') as f:
+                f.write(','.join(map(str, row_without_pid)) + '\n')
+
+            # Append the row (excluding PID column) to MasterV.csv
+            with open('MasterV copy.csv', 'a') as f:
+                f.write(','.join(map(str, row_without_pid)) + '\n')
+
+    # Save the updated DataFrame back to the original CSV file
+    df.to_csv(csv_file, index=False)
+    print("done")
+
+
+
