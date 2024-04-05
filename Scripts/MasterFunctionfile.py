@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 import MasterFunctionfile as mf
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
+import urllib
+
 
 def find_lowest_price_store_with_scrapfly(product_url):
     api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
@@ -408,9 +410,14 @@ def create_manualcheck_file(input_file):
         
 import pandas as pd
 
-def update_master_db_w_manualcheck(master_db_path, update_csv_path):
-    # Read Master_DB.csv
-    master_db = pd.read_csv(master_db_path)
+def update_master_db_w_manualcheck(master_db_path, update_csv_path, manual_Update_Ouput):
+    # Check if Master_DB.csv exists
+    if os.path.exists(master_db_path):
+        # Read Master_DB.csv
+        master_db = pd.read_csv(master_db_path)
+    else:
+        # Create an empty DataFrame if Master_DB.csv doesn't exist
+        master_db = pd.DataFrame(columns=['ASIN', 'Blacklisted', 'Extraction_Link'])
 
     # Read Update_CSV.csv
     update_csv = pd.read_csv(update_csv_path)
@@ -420,94 +427,42 @@ def update_master_db_w_manualcheck(master_db_path, update_csv_path):
         asin = row['ASIN']
         black_list = row.get('Black_list')
         product_code = row.get('PID')
+        upc = row["Product Codes: UPC"]
 
-        # Update Blacklist
-        if black_list is not None:
-            # Find the row in Master_DB that matches the ASIN
-            master_row_index = master_db.index[master_db['ASIN'] == asin]
+        # Find the row in Master_DB that matches the ASIN
+        master_row_index = master_db.index[master_db['ASIN'] == asin]
 
-            # If ASIN found, update the Blacklisted column
-            if not master_row_index.empty:
+        if not master_row_index.empty:
+            # ASIN found in Master_DB, update Blacklist if provided
+            if black_list is not None:
                 master_db.loc[master_row_index, 'Blacklisted'] = black_list
+        else:
+            # ASIN not found in Master_DB, add a new row
+            master_db = master_db.append({'ASIN': asin, 'Blacklisted': black_list, 'Extraction_Link': None}, ignore_index=True)
 
-        # Update Link
+        # Update Link if Product Code is provided and not 'None'
         if product_code is not None and pd.notna(product_code) and str(product_code).lower() != "none":
-            # Find the row in Master_DB that matches the ASIN
-            master_row_index = master_db.index[master_db['ASIN'] == asin]
-
-            # If ASIN found, update the Extraction_Link column
-            if not master_row_index.empty:
-                pid = product_code
-                upc = master_db.loc[master_row_index, 'Product Codes: UPC'].iloc[0]  # Extract UPC from Master_DB
-                new_link = f'https://www.google.com/shopping/product/{pid}/offers?q={upc}&prds=cid:{pid},cond:1'
-                master_db.loc[master_row_index, 'Extraction_Link'] = new_link
-
-    # Save the updated Master_DB
-    master_db.to_csv(master_db_path, index=False)
-
-    print("Master_DB updated successfully.")
-
-
-
-def update_BlackList(master_db_path, update_csv_path):
-    # Read Master_DB.csv
-    master_db = pd.read_csv(master_db_path)
-
-    # Read Update_CSV.csv
-    update_csv = pd.read_csv(update_csv_path)
-
-    # Iterate through rows in Update_CSV and update Master_DB accordingly
-    for index, row in update_csv.iterrows():
-        asin = row['ASIN']
-        black_list = row['Black_list']
-
-        # Find the row in Master_DB that matches the ASIN
-        master_row_index = master_db.index[master_db['ASIN'] == asin]
-
-        # If ASIN found, update the Blacklisted column
-        if not master_row_index.empty:
-            master_db.loc[master_row_index, 'Blacklisted'] = black_list
-
-    # Save the updated Master_DB
-    master_db.to_csv(master_db_path, index=False)
-
-def update_link(master_db_path, update_csv_path):
-    # Read Master_DB.csv
-    master_db = pd.read_csv(master_db_path)
-
-    # Read Update_CSV.csv
-    update_csv = pd.read_csv(update_csv_path)
-
-    # Iterate through rows in Update_CSV and update Master_DB accordingly
-    for index, row in update_csv.iterrows():
-        asin = row['ASIN']
-        product_code = row['PID']
-
-        # Skip the ASIN if the product code is None or "None"
-        if pd.isna(product_code) or str(product_code).lower() == "none":
-            continue
-
-        # Find the row in Master_DB that matches the ASIN
-        master_row_index = master_db.index[master_db['ASIN'] == asin]
-        print("Master row index for ASIN", asin, ":", master_row_index)
-
-        # If ASIN found, update the Extraction_Link column
-        if not master_row_index.empty:
-            pid = product_code
-            upc = master_db.loc[master_row_index, 'Product Codes: UPC'].iloc[0]  # Extract UPC from Master_DB
-            new_link = f'https://www.google.com/shopping/product/{pid}/offers?q={upc}&prds=cid:{pid},cond:1'
-            print("New link for ASIN", asin, ":", new_link)
+            new_link = f'https://www.google.com/shopping/product/{product_code}/offers?q={upc}&prds=cid:{product_code},cond:1'
             master_db.loc[master_row_index, 'Extraction_Link'] = new_link
+        else:
+            # If PID is None or 'None', set Extraction_Link to None
+            master_db.loc[master_row_index, 'Extraction_Link'] = "None"
 
     # Save the updated Master_DB
-    master_db.to_csv(master_db_path, index=False)
+    master_db.to_csv(manual_Update_Ouput, index=False)
 
+    print(f"{manual_Update_Ouput} updated successfully.")
 
 
 
 def process_row_with_scrapingbee(row, index):
     MIN_ROI = 1.7
     MAX_ROI = 1.87
+    
+    if pd.isna(row['Extraction_Link']) or row['Extraction_Link'] == "None":
+        print(f"Skipping row {index} as Extraction_Link is None")
+        return None
+
     print(f"Working on row {index}")
     # Initialize default values for the updates
     update_info = {
@@ -520,29 +475,28 @@ def process_row_with_scrapingbee(row, index):
     }
 
     product_url = row['Extraction_Link']
-    if pd.notna(product_url):
-        # Attempt to find the lowest price store using the given product URL
-        try:
-            lowest_price_store, price = mf.find_lowest_price_store_with_scrapingbee(product_url)
+    # Attempt to find the lowest price store using the given product URL
+    try:
+        lowest_price_store, price = mf.find_lowest_price_store_with_scrapingbee(product_url)
 
-            if price is not None:
-                # Calculate the Min Price, Max Price, and Amazon List Price based on the retrieved price
-                min_price = price * MIN_ROI
-                max_price = price * MAX_ROI
-                amazon_list_price = mf.calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
+        if price is not None:
+            # Calculate the Min Price, Max Price, and Amazon List Price based on the retrieved price
+            min_price = price * MIN_ROI
+            max_price = price * MAX_ROI
+            amazon_list_price = mf.calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
 
-                # Update the row information with the calculated values
-                update_info.update({
-                    'Store': lowest_price_store,
-                    'Price': price,
-                    'Min Price': min_price,
-                    'Max Price': max_price,
-                    'Amazon_List_price': amazon_list_price,
-                    'Can_List': "Y"  # Update to "Y" since we have valid pricing information
-                })
-        except Exception as e:
-            print(f"Error processing row {index}: {e}")
-            # If an error occurs, retain default update_info which indicates failure
+            # Update the row information with the calculated values
+            update_info.update({
+                'Store': lowest_price_store,
+                'Price': price,
+                'Min Price': min_price,
+                'Max Price': max_price,
+                'Amazon_List_price': amazon_list_price,
+                'Can_List': "Y"  # Update to "Y" since we have valid pricing information
+            })
+    except Exception as e:
+        print(f"Error processing row {index}: {e}")
+        # If an error occurs, retain default update_info which indicates failure
 
     # Return a tuple containing the index and the update information
     # This allows the calling function to know which row this information pertains to
@@ -616,5 +570,52 @@ def filter_and_export(csv_file, brand_names, output_filename):
         print(f"Filtered data exported to '{output_file_path}' successfully.")
     except FileNotFoundError:
         print(f"File '{csv_file}' not found.")
+
+def create_google_shopping_link(upc, title):
+    base_url = "https://www.google.com/search?"
+    query_parameters = {
+        "q": f"{upc} {title}",
+        "tbm": "shop"
+    }
+    encoded_query = urllib.parse.urlencode(query_parameters, quote_via=urllib.parse.quote_plus)
+    return base_url + encoded_query
+
+def create_amazon_link(asin):
+    base_url = "https://www.amazon.com/dp/"
+    return f"{base_url}{asin}?psc=1"
+
+def prepare_manual_only_import(input_file, output_file):
+    # Read the input CSV file
+    spreadsheet = pd.read_csv(input_file)
+
+    # Custom_SKU
+    spreadsheet['Custom_SKU'] = "GB" + spreadsheet['Product Codes: UPC'].astype(str)
+
+    # Google_Search_Link
+    spreadsheet['Google_Search_Link'] = spreadsheet.apply(
+        lambda row: create_google_shopping_link(row['Product Codes: UPC'], row['Title']), axis=1)
+
+    # Amazon_link
+    spreadsheet['Amazon_link'] = spreadsheet['ASIN'].apply(create_amazon_link)
+
+    # Match
+    spreadsheet['Match'] = "Y"
+
+    # Extraction_Link, Store, Price, Min Price, Max Price, Amazon_List_price
+    spreadsheet['Extraction_Link'] = None
+    spreadsheet['Store'] = None
+    spreadsheet['Price'] = None
+    spreadsheet['Min Price'] = None
+    spreadsheet['Max Price'] = None
+    spreadsheet['Amazon_List_price'] = None
+
+    # Can_List
+    spreadsheet['Can_List'] = "N"
+
+    # Save the prepared DataFrame to a new CSV file
+    spreadsheet.to_csv(output_file, index=False)
+
+    print(f"Prepared data saved to {output_file}")
+
 
 
