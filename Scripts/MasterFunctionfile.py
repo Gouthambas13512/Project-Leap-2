@@ -494,7 +494,8 @@ def process_row_with_scrapingbee(row, index):
         'Min Price': None,
         'Max Price': None,
         'Amazon_List_price': None,
-        'Can_List': "N"  # Default to "N", will update if conditions are met
+        'Can_List': "N",  # Default to "N", will update if conditions are met
+        'Curr_Listed?': 0
     }
 
     product_url = row['Extraction_Link']
@@ -516,7 +517,8 @@ def process_row_with_scrapingbee(row, index):
                     'Min Price': min_price,
                     'Max Price': max_price,
                     'Amazon_List_price': amazon_list_price,
-                    'Can_List': "Y"  # Update to "Y" since we have valid pricing information
+                    'Can_List': "Y",  # Update to "Y" since we have valid pricing information
+                    'Curr_Listed?': 1
                 })
         except Exception as e:
             print(f"Error processing row {index}: {e}")
