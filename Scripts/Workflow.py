@@ -52,16 +52,17 @@ Black_Listed_Y = 'DataBaseFiles\Black_Listed_Y.csv'  # These are blacklisted Y
 #Need to pull the updated data from Keepa. In this section you can neglect certain brands
 #OUTPUT this will update MasterV
 #**CODE BELOW
-#mf.update_master_v('KeepaExports\Keepa_Update.csv', 'DataBaseFiles\MasterV.csv')
+#mf.update_master_v('KeepaExports/NorthFaceNewPrices.csv', 'DataBaseFiles/NorthFace.csv')
 
 #6
 #Tells us if we can list a product. Updates (Amazon_List_price)
 #Here we can use filter_and_export to neglect any brand before running
+#INPORT: MasterV. Currently MasterDB is not being used
 #EXPORT: Updates MasterV to itself
 MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
-master_db = 'DataBaseFiles\Master_DB.csv'
+master_db = 'DataBaseFiles/Master_DB.csv'
 #**CODE BELOW---------
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db)
+mf.update_pricing_concurrently("DataBaseFiles/NorthFace.csv", master_db)
 
 #LIST PRODUCTS ON AMAZON
 
