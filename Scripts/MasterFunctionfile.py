@@ -543,7 +543,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path):
                 Curr_Listed.at[index, key] = value
 
     # After processing, save the updated DataFrames
-    Curr_Listed.to_csv('DataBaseFiles\MasterV.csv', index=False)
+    Curr_Listed.to_csv(Curr_Listed_path, index=False)
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety
 
