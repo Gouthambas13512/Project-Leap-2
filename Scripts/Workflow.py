@@ -62,7 +62,7 @@ Black_Listed_Y = 'DataBaseFiles\Black_Listed_Y.csv'  # These are blacklisted Y
 MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 #**CODE BELOW---------
-mf.update_pricing_concurrently("DataBaseFiles/NorthFace.csv", master_db)
+mf.update_pricing_concurrently(("DataBaseFiles/NorthFace.csv"), master_db)
 
 #LIST PRODUCTS ON AMAZON
 
