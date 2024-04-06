@@ -15,8 +15,8 @@ from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
 def find_lowest_price_store_with_scrapfly(product_url):
     api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
     additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
-    Black_List_Store = ["Chiappetta Shoes", "Sole Desire", "Shoe Station"]  # List of blacklisted stores
-    
+    Black_List_Store = ["Chiappetta Shoes", "Sole Desire", "Shoe Station", "Bloomingdale's", "Lucky Shoes", "Glik's", "RushOrderTees", "Shoe Carnival", "FrontRunners LA", "Roderer Shoe Center", "Rogans Shoes", "Goodmiles Running Company", "Gazelle Sports", "Confluence Running", "Holabird Sports", "ssense.com", "Lyst"]
+
     scrapfly = ScrapflyClient(key=api_key)
     
     error_counter = 0
@@ -552,7 +552,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path):
                 Curr_Listed.at[index, key] = value
 
     # After processing, save the updated DataFrames
-    Curr_Listed.to_csv(Curr_Listed_path, index=False)
+    Curr_Listed.to_csv("Testing_Black_List_Stores.csv", index=False)
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety
 
