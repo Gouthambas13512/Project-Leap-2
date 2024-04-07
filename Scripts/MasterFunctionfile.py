@@ -438,7 +438,8 @@ def update_master_db_w_manualcheck(master_db_path, update_csv_path, manual_Updat
                 master_db.loc[master_row_index, 'Blacklisted'] = black_list
         else:
             # ASIN not found in Master_DB, add a new row
-            master_db = master_db.append({'ASIN': asin, 'Blacklisted': black_list, 'Extraction_Link': None}, ignore_index=True)
+            new_row = pd.DataFrame({'ASIN': [asin], 'Blacklisted': [black_list], 'Extraction_Link': [None]})
+            master_db = pd.concat([master_db, new_row], ignore_index=True)
 
         # Update Link if Product Code is provided and not 'None'
         if product_code is not None and pd.notna(product_code) and str(product_code).lower() != "none":
@@ -584,38 +585,76 @@ def create_amazon_link(asin):
     base_url = "https://www.amazon.com/dp/"
     return f"{base_url}{asin}?psc=1"
 
+import pandas as pd
+
 def prepare_manual_only_import(input_file, output_file):
     # Read the input CSV file
     spreadsheet = pd.read_csv(input_file)
 
-    # Custom_SKU
-    spreadsheet['Custom_SKU'] = "GB" + spreadsheet['Product Codes: UPC'].astype(str)
+    # Save temp data
+    temp_blacklisted = spreadsheet['Black_list'].copy()
+    temp_pid = spreadsheet['PID'].copy()
 
-    # Google_Search_Link
-    spreadsheet['Google_Search_Link'] = spreadsheet.apply(
-        lambda row: create_google_shopping_link(row['Product Codes: UPC'], row['Title']), axis=1)
+    # Delete the columns
+    del spreadsheet['Black_list']
+    del spreadsheet['PID']
 
-    # Amazon_link
-    spreadsheet['Amazon_link'] = spreadsheet['ASIN'].apply(create_amazon_link)
+    # Define a function to process each row
+    def process_row(row, blacklisted, pid):
+        upc = row['Product Codes: UPC']
+        
+        row['Prime Eligible (Amazon offer)'] = None
+        # Custom_SKU
+        row['Custom_SKU'] = "GB" + str(upc)
 
-    # Match
-    spreadsheet['Match'] = "Y"
+        # Google_Search_Link
+        row['Google_Search_Link'] = create_google_shopping_link(upc, row['Title'])
 
-    # Extraction_Link, Store, Price, Min Price, Max Price, Amazon_List_price
-    spreadsheet['Extraction_Link'] = None
-    spreadsheet['Store'] = None
-    spreadsheet['Price'] = None
-    spreadsheet['Min Price'] = None
-    spreadsheet['Max Price'] = None
-    spreadsheet['Amazon_List_price'] = None
+        # Amazon_link
+        row['Amazon_link'] = create_amazon_link(row['ASIN'])
 
-    # Can_List
-    spreadsheet['Can_List'] = "N"
+        # Match
+        row['Match'] = "Y"
+
+        # Use temp PID data for Extraction_Link
+        product_code = pid[row.name]  # Using row index to match
+        if product_code == "none":
+            row['Extraction_Link'] = None
+        else:
+            row['Extraction_Link'] = f'https://www.google.com/shopping/product/{product_code}/offers?q={upc}&prds=cid:{product_code},cond:1'
+        
+        # Set other fields to None or initial values
+        row['Store'] = None
+        row['Price'] = None
+        row['Min Price'] = None
+        row['Max Price'] = None
+        row['Amazon_List_price'] = None
+        row['Can_List'] = "N"
+        row['Curr_Listed?'] = 0
+
+        # Use temp Blacklisted data
+        row['Blacklisted'] = blacklisted[row.name]  # Using row index to match
+
+        return row
+
+    # Apply the function to each row, passing the temp data as additional arguments
+    spreadsheet = spreadsheet.apply(lambda row: process_row(row, temp_blacklisted, temp_pid), axis=1)
+
+    # Define the columns order and rearrange the DataFrame
+    columns_order = [
+        'Title', 'Sales Rank: 30 days avg.', 'Sales Rank: 90 days avg.', 'Buy Box: Current',
+        'Buy Box: Stock', 'New: Current', 'New: Highest', 'Referral Fee %',
+        'New, 3rd Party FBM: 30 days avg.', 'Lowest FBM Seller', 
+        'Count of retrieved live offers: New, FBM', 'ASIN', 'Product Codes: EAN', 
+        'Product Codes: UPC', 'Parent ASIN', 'Brand', 'Prime Eligible (Amazon offer)',
+        'Custom_SKU', 'Google_Search_Link', 'Match', 'Amazon_link', 'Extraction_Link', 
+        'Store', 'Price', 'Min Price', 'Max Price', 'Amazon_List_price', 'Can_List', 'Blacklisted', 
+        'Curr_Listed?'
+    ]
+    spreadsheet = spreadsheet.reindex(columns=columns_order, fill_value=None)
 
     # Save the prepared DataFrame to a new CSV file
     spreadsheet.to_csv(output_file, index=False)
 
     print(f"Prepared data saved to {output_file}")
-
-
 

@@ -5,12 +5,9 @@ import os
 
 #1
 #Combine keepa exports and get "need to verify" and Verified
-
 #OUTPUT: Keepa_Export_Combined.csv
-
 input_files = ["KeepaExports\All IS.csv", "KeepaExports\All OOS.csv","KeepaExports\FBA and AMZ Only.csv", "KeepaExports\FBM Only.csv"]
-
-# Merge each input file
+# Merge each input file and export only the NEW items
 #OUPUT: Keepa_Combined_Export.csv
 '''
 for file in input_files:
@@ -22,10 +19,10 @@ for file in input_files:
 
 #1.5
 #IF RUNNING THIS, SKIP 2
-#Input: Keepa_Combined_Export.csv
-#Output: Is the same file with additional columns added
-#Prepare_Import_File = "KeepaExports/file_to_prepare.csv"
-#Output_File = "KeepaExports/prepared_output.csv"
+#Input: Keepa_Combined_Export.csv NEW items which have Black_list and PID column with filled data
+#Output: Is the Output_File ready to go directly into MasterDB and MasterV
+Prepare_Import_File = "KeepaExports/file_to_prepare.csv"
+Output_File = "KeepaExports/prepared_output.csv"
 #mf.prepare_manual_only_import(Prepare_Import_File, Output_File)
 
 
@@ -39,7 +36,7 @@ for file in input_files:
 #Update MasterDB link and BlackList from ManualCheck
 #Output: No ouput. Just updates MasterDB
 #The prepared_output is the file with Black_List and PID column filled out
-update_csv_path = "KeepaExports/prepared_output_w_pid.csv" #'ManualCheck.csv'
+update_csv_path = "KeepaExports/prepared_output.csv" #'ManualCheck.csv'
 master_db_path = 'DataBaseFiles/Master_DB.csv'
 #Below should be changed to master_db_path after testing
 manual_Update_Ouput = master_db_path
