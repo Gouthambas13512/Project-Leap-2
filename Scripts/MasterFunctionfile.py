@@ -15,7 +15,8 @@ from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
 def find_lowest_price_store_with_scrapfly(product_url):
     api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
     additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
-    
+    Black_List_Store = ["Chiappetta Shoes", "Sole Desire", "Shoe Station", "Bloomingdale's", "Lucky Shoes", "Glik's", "RushOrderTees", "Shoe Carnival", "FrontRunners LA", "Roderer Shoe Center", "Rogans Shoes", "Goodmiles Running Company", "Gazelle Sports", "Confluence Running", "Holabird Sports", "ssense.com", "Lyst"]
+
     scrapfly = ScrapflyClient(key=api_key)
     
     error_counter = 0
@@ -47,6 +48,11 @@ def find_lowest_price_store_with_scrapfly(product_url):
                     if store_name_tag and price_tag and shipping_info:
                         store_name_raw = store_name_tag.get_text(strip=True)
                         store_name = store_name_raw.split('Opens')[0].strip()
+                        
+                        # Check if the store is blacklisted
+                        if any(bad_word in store_name for bad_word in Black_List_Store):
+                            continue  # Skip this store and move to the next one
+                        
                         price_str = price_tag.get_text(strip=True).replace('$', '').replace(',', '').replace('\xa0€', '').strip()
                         price = float(price_str)
 
@@ -77,6 +83,7 @@ def find_lowest_price_store_with_scrapfly(product_url):
         print(f"An error occurred: {e}")
 
     return None, None
+
 
 def find_lowest_price_store_with_scrapingbee(product_url):
     api_key = '7WX8OW6NE4303BOGNO05RWHKP0COKSO0ZXZDF4Y0FKBZ5G7HDS5276Z1MCV9IU2EFRQC14OCU4AR7VI7'
@@ -494,7 +501,8 @@ def process_row_with_scrapingbee(row, index):
         'Min Price': None,
         'Max Price': None,
         'Amazon_List_price': None,
-        'Can_List': "N"  # Default to "N", will update if conditions are met
+        'Can_List': "N",  # Default to "N", will update if conditions are met
+        'Curr_Listed?': 0
     }
 
     product_url = row['Extraction_Link']
@@ -516,7 +524,8 @@ def process_row_with_scrapingbee(row, index):
                     'Min Price': min_price,
                     'Max Price': max_price,
                     'Amazon_List_price': amazon_list_price,
-                    'Can_List': "Y"  # Update to "Y" since we have valid pricing information
+                    'Can_List': "Y",  # Update to "Y" since we have valid pricing information
+                    'Curr_Listed?': 1
                 })
         except Exception as e:
             print(f"Error processing row {index}: {e}")
