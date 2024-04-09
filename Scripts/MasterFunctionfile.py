@@ -15,7 +15,7 @@ from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
 def find_lowest_price_store_with_scrapfly(product_url):
     api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
     additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
-    Black_List_Store = ["Chiappetta Shoes", "Sole Desire", "Shoe Station", "Bloomingdale's", "Lucky Shoes", "Glik's", "RushOrderTees", "Shoe Carnival", "FrontRunners LA", "Roderer Shoe Center", "Rogans Shoes", "Goodmiles Running Company", "Gazelle Sports", "Confluence Running", "Holabird Sports", "ssense.com", "Lyst"]
+    Black_List_Store = ["Chiappetta Shoes", "Sole Desire", "Shoe Station", "Bloomingdale's", "Lucky Shoes", "Glik's", "RushOrderTees", "Shoe Carnival", "FrontRunners LA", "Roderer Shoe Center", "Rogans Shoes", "Goodmiles Running Company", "Gazelle Sports", "Confluence Running", "Holabird Sports", "ssense.com", "Lyst", "Fleet Feet"]
 
     scrapfly = ScrapflyClient(key=api_key)
     
@@ -167,8 +167,11 @@ def calculate_shipping_cost(shipping_text):
         return 0
     
 def calculate_amazon_list_price(row):
-    if pd.isna(row['Price']): #or row['Lowest FBM Seller'] == 'QualitySupplyCo (91% ANZYNJW9IIF9C)':
+    if pd.isna(row['Price']):
         return None
+    #might need to change so that it 
+    if row['Lowest FBM Seller'] == 'QualitySupplyCo (91% ANZYNJW9IIF9C)':
+        return row['New: Current']
 
     buy_box_current = row['Buy Box: Current']
     new_current = row['New: Current']
@@ -195,7 +198,7 @@ def calculate_amazon_list_price(row):
         return new_current - 1
     elif new_highest is not None:
         if row['Min Price'] > new_highest:
-            return row['Min Price']
+            return None
         elif row['Max Price'] < new_highest:
             return row['Max Price']
         else:

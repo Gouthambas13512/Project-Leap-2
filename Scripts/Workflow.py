@@ -8,7 +8,7 @@ import os
 
 #OUTPUT: Keepa_Export_Combined.csv
 
-input_files = ["KeepaExports\All IS.csv", "KeepaExports\All OOS.csv","KeepaExports\FBA and AMZ Only.csv", "KeepaExports\FBM Only.csv"]
+input_files = ["KeepaExports\All IS.csv", "KeepaExports\FBM Only.csv"]
 
 # Merge each input file
 #OUPUT: Keepa_Combined_Export.csv
@@ -18,8 +18,8 @@ for file in input_files:
         mf.merge_csv(file)
     else:
         print(f"File '{file}' not found.")
-'''
 
+'''
 #2
 #Run Google_Scrapping.py with the output of #1
 #It Will the file with name XYZ_Can_LIST.csv -> Send it to MANUAL SCANNER
