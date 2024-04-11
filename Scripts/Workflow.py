@@ -71,19 +71,18 @@ local_file_path = 'DataBaseFiles/MasterV.csv'  # Make sure this is the correct p
 remote_dir_path = '/'  # This should be the directory on the server where you want to store your file
 remote_file_name = 'MasterV.csv' # The name you want the uploaded file to have
 #Updates the CSV path for the UI
-mf.upload_csv_via_ftp(hostname, username, password, local_file_path, remote_dir_path, remote_file_name)
+#mf.upload_csv_via_ftp(hostname, username, password, local_file_path, remote_dir_path, remote_file_name)
 
 
 #6
 #Tells us if we can list a product. Updates (Amazon_List_price)
 #Here we can use filter_and_export to neglect any brand before running
 #EXPORT: Updates MasterV to itself
-MasterV_Brands_To_Update = 'MasterV_test.csv'
+MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
-Output_File_Price_Update = 'MasterV_test.csv'
-max_workers = 50
+Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
 #**CODE BELOW---------
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, max_workers, Output_File_Price_Update)
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db,Output_File_Price_Update)
 
 
 #LIST PRODUCTS ON AMAZON

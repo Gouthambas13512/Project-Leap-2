@@ -20,7 +20,8 @@ from ftplib import FTP_TLS
 def find_lowest_price_store_with_scrapfly(product_url):
     api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
     additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
-    
+    Black_List_Store = ["Chiappetta Shoes", "Sole Desire", "Shoe Station", "Bloomingdale's", "Lucky Shoes", "Glik's", "RushOrderTees", "Shoe Carnival", "FrontRunners LA", "Roderer Shoe Center", "Rogans Shoes", "Goodmiles Running Company", "Gazelle Sports", "Confluence Running", "Holabird Sports", "ssense.com", "Lyst", "Fleet Feet"]
+
     scrapfly = ScrapflyClient(key=api_key)
     
     error_counter = 0
@@ -52,6 +53,11 @@ def find_lowest_price_store_with_scrapfly(product_url):
                     if store_name_tag and price_tag and shipping_info:
                         store_name_raw = store_name_tag.get_text(strip=True)
                         store_name = store_name_raw.split('Opens')[0].strip()
+                        
+                        # Check if the store is blacklisted
+                        if any(bad_word in store_name for bad_word in Black_List_Store):
+                            continue  # Skip this store and move to the next one
+                        
                         price_str = price_tag.get_text(strip=True).replace('$', '').replace(',', '').replace('\xa0€', '').strip()
                         price = float(price_str)
 
@@ -82,7 +88,6 @@ def find_lowest_price_store_with_scrapfly(product_url):
         print(f"An error occurred: {e}")
 
     return None, None
-
             
 
 def find_lowest_price_store_with_scrapingbee(product_url):
@@ -187,8 +192,11 @@ def calculate_shipping_cost(shipping_text):
         return 0
     
 def calculate_amazon_list_price(row):
-    if pd.isna(row['Price']): #or row['Lowest FBM Seller'] == 'QualitySupplyCo (91% ANZYNJW9IIF9C)':
+    if pd.isna(row['Price']):
         return None
+    #might need to change so that it 
+    if row['Lowest FBM Seller'] == 'ANZYNJW9IIF9C':
+        return row['New: Current']
 
     buy_box_current = row['Buy Box: Current']
     new_current = row['New: Current']
@@ -213,9 +221,9 @@ def calculate_amazon_list_price(row):
         return buy_box_current - 1
     elif new_current is not None and new_current > row['Min Price']:
         return new_current - 1
-    elif new_highest is not None:
+    elif new_current is None and buy_box_current is None and new_highest is not None:
         if row['Min Price'] > new_highest:
-            return row['Min Price']
+            return None
         elif row['Max Price'] < new_highest:
             return row['Max Price']
         else:
@@ -224,7 +232,6 @@ def calculate_amazon_list_price(row):
         return row['Max Price']
     else:
         None
-
 
 def Update_Can_List(row):
     import pandas as pd  # Ensure pandas is imported
@@ -511,7 +518,7 @@ def process_row_with_scrapingbee(row, index):
     product_url = row['Extraction_Link']
     # Attempt to find the lowest price store using the given product URL
     try:
-        lowest_price_store, price = mf.find_lowest_price_store_with_scrapingbee(product_url)
+        lowest_price_store, price = mf.find_lowest_price_store_with_scrapfly(product_url)
 
         if price is not None:
             # Calculate the Min Price, Max Price, and Amazon List Price based on the retrieved price
@@ -541,7 +548,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path, max_workers):
     Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
-    with ThreadPoolExecutor(max_workers) as executor:
+    with ThreadPoolExecutor(20) as executor:
         # Submit tasks for each row
         futures = [executor.submit(process_row_with_scrapingbee, row, index) for index, row in Curr_Listed.iterrows()]
 
