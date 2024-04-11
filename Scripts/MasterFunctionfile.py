@@ -170,7 +170,7 @@ def calculate_amazon_list_price(row):
     if pd.isna(row['Price']):
         return None
     #might need to change so that it 
-    if row['Lowest FBM Seller'] == 'QualitySupplyCo (91% ANZYNJW9IIF9C)':
+    if row['Lowest FBM Seller'] == 'ANZYNJW9IIF9C':
         return row['New: Current']
 
     buy_box_current = row['Buy Box: Current']
