@@ -219,16 +219,16 @@ def calculate_amazon_list_price(row):
 
     if buy_box_current is not None and buy_box_current > row['Min Price']:
         return buy_box_current - 1
-    elif new_current is not None and new_current > row['Min Price']:
+    if new_current is not None and new_current > row['Min Price']:
         return new_current - 1
-    elif new_current is None and buy_box_current is None and new_highest is not None:
+    if new_highest is not None:
         if row['Min Price'] > new_highest:
             return None
         elif row['Max Price'] < new_highest:
             return row['Max Price']
         else:
             return new_highest
-    elif buy_box_current is None and new_current is None and new_highest is None:
+    if buy_box_current is None and new_current is None and new_highest is None:
         return row['Max Price']
     else:
         None
