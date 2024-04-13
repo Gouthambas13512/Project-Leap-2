@@ -82,7 +82,7 @@ MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
 #**CODE BELOW---------
-mf.update_pricing_concurrently(r"DataBaseFiles\NorthFace.csv", master_db, r"DataBaseFiles\NorthFace.csv")
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update)
 
 
 
@@ -118,6 +118,10 @@ master_db = 'DataBaseFiles\Master_DB.csv'
 #Pulls Certain brands from MasterV file. This Can be used to update pricing without certain brands
 UserG = ["Kate Spade", "Kate Spade New York", "New Balance", "Steve Madden", "THE NORTH FACE", "Tory Burch"]
 #mf.filter_and_export("DataBaseFiles\MasterV.csv", UserG, "Goutham[DATE].csv")
+
+
+#HelperFunctions
+#mf.update_blacklist_from_master_v("example_asin", "Y")
 
 
 
