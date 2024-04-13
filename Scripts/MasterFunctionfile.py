@@ -541,7 +541,7 @@ def process_row_with_scrapingbee(row, index):
 
 
 def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update):
-    Curr_Listed = pd.read_csv(Curr_Listed_path).head(100)
+    Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
     with ThreadPoolExecutor(max_workers=20) as executor:
