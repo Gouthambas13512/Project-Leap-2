@@ -516,20 +516,21 @@ def process_row_with_scrapingbee(row, index):
 
             if price is not None:
                 # Calculate the Min Price, Max Price, and Amazon List Price based on the retrieved price
-                min_price = price * MIN_ROI
-                max_price = price * MAX_ROI
-                amazon_list_price = calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
+                min_price = round(price * MIN_ROI,2)
+                max_price = round(price * MAX_ROI,2)
+                amazon_list_price = round(calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price}),2)
 
-                # Update the row information with the calculated values
-                update_info.update({
-                    'Store': lowest_price_store,
-                    'Price': price,
-                    'Min Price': min_price,
-                    'Max Price': max_price,
-                    'Amazon_List_price': amazon_list_price,
-                    'Can_List': "Y",  # Update to "Y" since we have valid pricing information
-                    'Curr_Listed?': 1
-                })
+                # Update the row information with the calculated values only if Amazon_List_price is not None
+                if amazon_list_price is not None:
+                    update_info.update({
+                        'Store': lowest_price_store,
+                        'Price': price,
+                        'Min Price': min_price,
+                        'Max Price': max_price,
+                        'Amazon_List_price': amazon_list_price,
+                        'Can_List': "Y",  # Update to "Y" since we have valid pricing information
+                        'Curr_Listed?': 1
+                    })
         except Exception as e:
             print(f"Error processing row {index}: {e}")
             # If an error occurs, retain default update_info which indicates failure
@@ -539,8 +540,8 @@ def process_row_with_scrapingbee(row, index):
     return (index, update_info)
 
 
-def update_pricing_concurrently(Curr_Listed_path, master_db_path):
-    Curr_Listed = pd.read_csv(Curr_Listed_path)
+def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update):
+    Curr_Listed = pd.read_csv(Curr_Listed_path).head(100)
     master_db = pd.read_csv(master_db_path)
 
     with ThreadPoolExecutor(max_workers=20) as executor:
@@ -555,7 +556,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path):
                 Curr_Listed.at[index, key] = value
 
     # After processing, save the updated DataFrames
-    Curr_Listed.to_csv(Curr_Listed_path, index=False)
+    Curr_Listed.to_csv(Output_File_Price_Update, index=False)
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety
 
@@ -637,4 +638,26 @@ def update_extraction_links(csv_file):
     print("done")
 
 
+def update_blacklist_from_master_v(asin, value):
+    # Define file paths
+    master_v_path = "DataBaseFiles/MasterV.csv"
+    master_db_path = "DataBaseFiles/Master_DB.csv"
+    # Load MasterV.csv into a DataFrame
+    master_v_df = pd.read_csv(master_v_path)
+    # Check if ASIN exists in MasterV
+    if asin not in master_v_df['ASIN'].values:
+        print("Asin not found in MasterV")
+        return
+    # Remove ASIN column from MasterV
+    master_v_df.drop(columns=['ASIN'], inplace=True)
+    # Update "Blacklisted" column in MasterV
+    master_v_df['Blacklisted'] = value
+    # Save updated MasterV.csv
+    master_v_df.to_csv(master_v_path, index=False)
+    # Load Master_DB.csv into a DataFrame
+    master_db_df = pd.read_csv(master_db_path)
+    # Update "Blacklisted" column in Master_DB.csv
+    master_db_df.loc[master_db_df['ASIN'] == asin, 'Blacklisted'] = value
+    # Save updated Master_DB.csv
+    master_db_df.to_csv(master_db_path, index=False)
 

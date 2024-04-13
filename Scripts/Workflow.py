@@ -82,7 +82,7 @@ MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
 #**CODE BELOW---------
-mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update)
+mf.update_pricing_concurrently("DataBaseFiles/NorthFace.csv", master_db, "DataBaseFiles/NorthFace-test.csv")
 
 
 
