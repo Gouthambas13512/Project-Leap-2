@@ -78,11 +78,11 @@ remote_file_name = 'MasterV.csv' # The name you want the uploaded file to have
 #Tells us if we can list a product. Updates (Amazon_List_price)
 #Here we can use filter_and_export to neglect any brand before running
 #EXPORT: Updates MasterV to itself
-MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
+MasterV_Brands_To_Update = 'DataBaseFiles/MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
-Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
+Output_File_Price_Update = 'DataBaseFiles/MasterV.csv'
 #**CODE BELOW---------
-mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, MasterV_Brands_To_Update)
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update)
 
 
 

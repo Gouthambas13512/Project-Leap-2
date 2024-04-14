@@ -167,47 +167,41 @@ def calculate_shipping_cost(shipping_text):
         return 0
     
 def calculate_amazon_list_price(row):
-    if pd.isna(row['Price']):
-        return None
-    #might need to change so that it 
-    if row['Lowest FBM Seller'] == 'QualitySupplyCo (91% ANZYNJW9IIF9C)':
-        return row['New: Current']
-
-    buy_box_current = row['Buy Box: Current']
-    new_current = row['New: Current']
-    new_highest = row['New: Highest']
-    # Convert 'Buy Box: Current' and 'New: Current' to float
-    try:
-        buy_box_current = float(buy_box_current) if pd.notna(buy_box_current) else None
-    except ValueError:
-        buy_box_current = None
-
-    try:
-        new_current = float(new_current) if pd.notna(new_current) else None
-    except ValueError:
-        new_current = None
-    
-    try:
-        new_highest = float(new_highest) if pd.notna(new_highest) else None
-    except ValueError:
-        new_highest = None
-
-    if buy_box_current is not None and buy_box_current > row['Min Price']:
-        return buy_box_current - 1
-    elif new_current is not None and new_current > row['Min Price']:
-        return new_current - 1
-    elif new_highest is not None:
-        if row['Min Price'] > new_highest:
-            return None
-        elif row['Max Price'] < new_highest:
-            return row['Max Price']
+    # Condition for Lowest FBM Seller matching specific ID
+    if row['Lowest FBM Seller'] == 'ANZYNJW9IIF9C':
+        # Check if New: Current is greater than Min Price
+        if row['New: Current'] > row['Min Price']:
+            return row['New: Current']
         else:
-            return new_highest
-    elif buy_box_current is None and new_current is None and new_highest is None:
-        return None
-    else:
-        None
+            return None
 
+    # Check Buy Box: Current if it's available and meets the minimum price requirement
+    if pd.notna(row['Buy Box: Current']) and row['Buy Box: Current'] > row['Min Price']:
+        return row['Buy Box: Current'] - 1
+
+    # If Buy Box is not available, check New: Current if it's available and meets the minimum price requirement
+    if pd.notna(row['New: Current']) and row['New: Current'] > row['Min Price']:
+        return row['New: Current'] - 1
+
+    # If either number is available and not greater than Min Price then return none
+    if (pd.notna(row['Buy Box: Current']) or pd.notna(row['New: Current'])) and \
+       ((pd.notna(row['Buy Box: Current']) and row['Buy Box: Current'] <= row['Min Price']) or 
+        (pd.notna(row['New: Current']) and row['New: Current'] <= row['Min Price'])):
+        return None
+
+    # If neither is available, check if Max Price < New: Highest
+    if pd.notna(row['New: Highest']):
+        if row['Max Price'] < row['New: Highest']:
+            return row['New: Highest']
+        # If New: Highest is less than Max Price
+        elif row['New: Highest'] < row['Max Price']:
+            return row['New: Highest']
+        # If New: Highest is less than Min Price
+        elif row['New: Highest'] < row['Min Price']:
+            return row['New: Highest']
+
+    # If there is no New: Highest price then return Max Price
+    return row['Max Price']
 
 def Update_Can_List(row):
     import pandas as pd  # Ensure pandas is imported
@@ -541,7 +535,7 @@ def process_row_with_scrapingbee(row, index):
 
 
 def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update):
-    Curr_Listed = pd.read_csv(Curr_Listed_path)
+    Curr_Listed = pd.read_csv(Curr_Listed_path).head(250)
     master_db = pd.read_csv(master_db_path)
 
     with ThreadPoolExecutor(max_workers=20) as executor:
