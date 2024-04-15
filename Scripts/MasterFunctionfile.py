@@ -535,10 +535,10 @@ def process_row_with_scrapingbee(row, index):
 
 
 def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update):
-    Curr_Listed = pd.read_csv(Curr_Listed_path).head(250)
+    Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(max_workers=50) as executor:
         # Submit tasks for each row
         futures = [executor.submit(process_row_with_scrapingbee, row, index) for index, row in Curr_Listed.iterrows()]
 
@@ -655,3 +655,42 @@ def update_blacklist_from_master_v(asin, value):
     # Save updated Master_DB.csv
     master_db_df.to_csv(master_db_path, index=False)
 
+import http.client
+import mimetypes
+from codecs import encode
+
+base_url = "projectleapapi.agilensmartservices.com"
+endpoint = "/uploadFile"
+file_path = "C:\\Users\\Administrator\\Documents\\RA\\DataBaseFiles\\MasterV.csv"
+
+
+def upload_file(file_path):
+    conn = http.client.HTTPSConnection(base_url)
+    dataList = []
+    boundary = 'wL36Yn8afVp8Ag7AmP8qZ0SA4n1v9T'
+    dataList.append(encode('--' + boundary))
+    dataList.append(
+        encode('Content-Disposition: form-data; name="csv_file"; filename="{0}"'.format(file_path)))
+
+    fileType, _ = mimetypes.guess_type(file_path)
+    fileType = fileType or 'application/octet-stream'
+    dataList.append(encode('Content-Type: {}'.format(fileType)))
+    dataList.append(encode(''))
+
+    with open(file_path, 'rb') as f:
+        dataList.append(f.read())
+    dataList.append(encode('--' + boundary + '--'))
+    dataList.append(encode(''))
+    body = b'\r\n'.join(dataList)
+    payload = body
+    headers = {
+        'accept': 'application/json',
+        'Content-type': 'multipart/form-data; boundary={}'.format(boundary)
+    }
+    conn.request("POST", endpoint, payload, headers)
+    res = conn.getresponse()
+    data = res.read()
+    print(data.decode("utf-8"))
+
+
+upload_file(file_path)
