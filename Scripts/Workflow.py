@@ -21,7 +21,7 @@ for file in input_files:
 #IF RUNNING THIS, SKIP 2
 #Input: Keepa_Combined_Export.csv NEW items which have Black_list and PID column with filled data
 #Output: Is the Output_File ready to go directly into MasterDB and MasterV
-Prepare_Import_File = "KeepaExports/Keepa_Combined_Export.csv"
+Prepare_Import_File = "KeepaExports/Keepa_Combined_Export2.csv"
 Output_File = "KeepaExports/prepared_output.csv"
 #mf.prepare_manual_only_import(Prepare_Import_File, Output_File)
 
@@ -129,7 +129,7 @@ UserG = ["Kate Spade", "Kate Spade New York", "New Balance", "Steve Madden", "TH
 #HelperFunctions
 #mf.update_blacklist_from_master_v("example_asin", "Y")
 
-
+""""
 
 def parse_asins(asin_string):
     # Split the input string by newline characters and remove any empty strings
@@ -138,7 +138,7 @@ def parse_asins(asin_string):
 
 
 
-asin_string = """
+asin_string = =
 B073WH7KCP
 B073WH5HG7
 B073WH34W4
@@ -1133,7 +1133,7 @@ B07Q33D1YG
 B07BY5QFKG
 B08WCKJ58B
 B088NQNGB4
-"""
+
 asins = parse_asins(asin_string)
 Asin_list = ["{}".format(asin) for asin in asins]
 
@@ -1176,6 +1176,9 @@ blacklisted_y_path = "DataBaseFiles\Black_Listed_Y.csv"
 master_db_removed, blacklisted_y_removed = remove_blacklisted_asins(master_db_path, blacklisted_y_path, Asin_list)
 print(f"Removed {master_db_removed} ASINs from Master_DB.csv")
 print(f"Removed {blacklisted_y_removed} ASINs from Black_Listed_Y.csv")
+"""
+
+
 
 
 
