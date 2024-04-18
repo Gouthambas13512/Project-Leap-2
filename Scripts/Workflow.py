@@ -1135,9 +1135,11 @@ B08WCKJ58B
 B088NQNGB4
 """
 asins = parse_asins(asin_string)
-Asin_list = ", ".join(['"{}"'.format(asin) for asin in asins])
+Asin_list = ["{}".format(asin) for asin in asins]
 
-def remove_blacklisted_asins(master_db_path, blacklisted_y_path, asin_list):
+print(Asin_list)
+
+def remove_blacklisted_asins(master_db_path, blacklisted_y_path, Asin_list):
     # Read the master database and blacklisted Y CSV files into pandas dataframes
     master_db_df = pd.read_csv(master_db_path)
     blacklisted_y_df = pd.read_csv(blacklisted_y_path)
@@ -1150,7 +1152,7 @@ def remove_blacklisted_asins(master_db_path, blacklisted_y_path, asin_list):
     blacklisted_y_removed_count = 0
 
     # Iterate over each ASIN in the asin_list
-    for asin in asin_list:
+    for asin in Asin_list:
         # Check if the ASIN is blacklisted
         if asin in blacklisted_asins:
             # If blacklisted, remove the corresponding row from the master database dataframe
