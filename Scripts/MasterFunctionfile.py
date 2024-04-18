@@ -222,12 +222,13 @@ def calculate_amazon_list_price(row):
     if pd.notna(row['New: Highest']):
         if row['Max Price'] < row['New: Highest']:
             return row['New: Highest']
-        # If New: Highest is less than Max Price
-        elif row['New: Highest'] < row['Max Price']:
-            return row['New: Highest']
-        # If New: Highest is less than Min Price
+        # Removed incorrect condition and added correct logic to not return New: Highest when below Min Price
         elif row['New: Highest'] < row['Min Price']:
+            return None  # This condition ensures that New: Highest is not returned if it's below Min Price
+        # Correct handling if New: Highest is between Min Price and Max Price
+        elif row['Min Price'] <= row['New: Highest'] < row['Max Price']:
             return row['New: Highest']
+
 
     # If there is no New: Highest price then return Max Price
     return row['Max Price']
