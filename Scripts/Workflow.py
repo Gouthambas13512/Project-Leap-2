@@ -61,12 +61,15 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 
 # Combine the CSV outputs from keep into one file
 #mf.combine_csv_files(r"KeepaExports\file1_export.csv", r"KeepaExports\file2_export.csv")
+
+
 #5
 #This takes Keepa_update which is all the verified Listings and updates the masterV with current Buybox:current, current, and store 
 #Need to pull the updated data from Keepa. In this section you can neglect certain brands
 #OUTPUT this will update MasterV
 #**CODE BELOW
 #mf.update_master_v('KeepaExports\Keepa_Update.csv', 'DataBaseFiles\MasterV.csv')
+
 hostname = '54.167.213.74'
 #port = 21
 username = 'ftpuser'
@@ -86,7 +89,7 @@ MasterV_Brands_To_Update = 'DataBaseFiles/MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles/MasterV.csv'
 #**CODE BELOW---------
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update)
+mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update)
 #mf.upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
 
 
