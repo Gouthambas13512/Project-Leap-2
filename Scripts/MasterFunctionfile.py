@@ -10,6 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 import MasterFunctionfile as mf
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import urllib
 from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
 
 def find_lowest_price_store_with_scrapfly(product_url):
@@ -83,6 +84,34 @@ def find_lowest_price_store_with_scrapfly(product_url):
         print(f"An error occurred: {e}")
 
     return None, None
+
+def merge_csv(input_file):
+    # Specify the output file name
+    output_file = "Keepa_Combined_Export.csv"
+    
+    # Check if the output file exists
+    if os.path.exists(output_file):
+        # Load existing data from output file
+        existing_data = pd.read_csv(output_file)
+    else:
+        # Create an empty DataFrame if the output file doesn't exist
+        existing_data = pd.DataFrame()
+
+    # Read data from the input file
+    input_data = pd.read_csv(input_file)
+
+    # If 'ASIN' column exists in the existing data, remove duplicates based on 'ASIN'
+    if 'ASIN' in existing_data.columns:
+        input_data = input_data[~input_data['ASIN'].isin(existing_data['ASIN'])]
+
+    # Append new data to existing data
+    merged_data = pd.concat([existing_data, input_data], ignore_index=True)
+
+    # Write merged data to the output file
+    merged_data.to_csv(output_file, index=False)
+
+    print(f"Data from {input_file} merged successfully.")
+
 
 
 def find_lowest_price_store_with_scrapingbee(product_url):
@@ -241,72 +270,6 @@ def clean_and_convert_price(value):
     return None
 
 
-def update_master_v(keepa_file, master_file):
-    # Step 1: Load Keepa_Update Data
-    keepa_data = {}
-    with open(keepa_file, mode='r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            asin = row['ASIN']
-            # Store and clean Buy Box: Current, New: Current values for each ASIN, and store Lowest FBM Seller as is
-            keepa_data[asin] = {
-                'Buy Box: Current': clean_and_convert_price(row['Buy Box: Current']),
-                'New: Current': clean_and_convert_price(row['New: Current']),
-                'New: Highest': clean_and_convert_price(row['New: Highest']),
-                'Lowest FBM Seller': row.get('Lowest FBM Seller')  # No cleaning needed
-            }
-    
-    # Step 2: Read MasterV and Prepare Updated Data
-    updated_rows = []
-    with open(master_file, mode='r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        fieldnames = reader.fieldnames
-        for row in reader:
-            asin = row['ASIN']
-            if asin in keepa_data:
-                # Update values from Keepa_Update after cleaning and converting
-                row['Buy Box: Current'] = keepa_data[asin]['Buy Box: Current']
-                row['New: Current'] = keepa_data[asin]['New: Current']
-                row['New: Highest'] = keepa_data[asin]['New: Highest']
-                # Directly update Lowest FBM Seller
-                row['Lowest FBM Seller'] = keepa_data[asin]['Lowest FBM Seller']
-            updated_rows.append(row)
-    
-    # Step 3: Write Updates Back to MasterV
-    with open(master_file, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(updated_rows)
-    print("Done")
-
-
-def merge_csv(input_file):
-    # Specify the output file name
-    output_file = "Keepa_Combined_Export.csv"
-    
-    # Check if the output file exists
-    if os.path.exists(output_file):
-        # Load existing data from output file
-        existing_data = pd.read_csv(output_file)
-    else:
-        # Create an empty DataFrame if the output file doesn't exist
-        existing_data = pd.DataFrame()
-
-    # Read data from the input file
-    input_data = pd.read_csv(input_file)
-
-    # If 'ASIN' column exists in the existing data, remove duplicates based on 'ASIN'
-    if 'ASIN' in existing_data.columns:
-        input_data = input_data[~input_data['ASIN'].isin(existing_data['ASIN'])]
-
-    # Append new data to existing data
-    merged_data = pd.concat([existing_data, input_data], ignore_index=True)
-
-    # Write merged data to the output file
-    merged_data.to_csv(output_file, index=False)
-
-    print(f"Data from {input_file} merged successfully.")
-
 def Update_DB_After_ManualV(input_file, master_db_file, master_v_file, Black_Listed_Y):
     # Load master database
     master_db = pd.read_csv(master_db_file)
@@ -320,12 +283,16 @@ def Update_DB_After_ManualV(input_file, master_db_file, master_v_file, Black_Lis
 
     # Initialize or load Black_Listed_Y file
     if os.path.exists(Black_Listed_Y):
-        manual_check = pd.read_csv(Black_Listed_Y)
+        black_listed_y = pd.read_csv(Black_Listed_Y)
     else:
-        manual_check = pd.DataFrame(columns=master_db.columns)
+        black_listed_y = pd.DataFrame(columns=master_db.columns)
 
     # Load input file
     input_df = pd.read_csv(input_file)
+
+    # Initialize counters for items added to master_v_file and black_listed_y file
+    items_added_to_master_v = 0
+    items_added_to_black_listed_y = 0
 
     # Process each ASIN from the input file
     for asin in input_df['ASIN']:
@@ -334,31 +301,41 @@ def Update_DB_After_ManualV(input_file, master_db_file, master_v_file, Black_Lis
 
         # If ASIN is found in master_db
         if not asin_row.empty:
-            # Check if any of the entries for this ASIN in the 'Blacklisted' column contain 'V'
+            # Check if any of the entries for this ASIN in the 'Blacklisted' column contain 'Y' or 'V'
             blacklisted_entries = asin_row['Blacklisted'].str.upper().str.strip()
-            if 'V' in blacklisted_entries.values:
-                # If ASIN is blacklisted with 'V' and not already in MasterV
+            if 'Y' in blacklisted_entries.values:
+                # If ASIN is blacklisted with 'Y' and not already in Black_Listed_Y
+                if asin not in black_listed_y['ASIN'].values:
+                    new_row = asin_row.copy()
+                    black_listed_y = pd.concat([black_listed_y, new_row], ignore_index=True)
+                    items_added_to_black_listed_y += 1
+            elif 'V' in blacklisted_entries.values:
+                # If ASIN is blacklisted with 'V' and not already in master_v_file
                 if asin not in master_v['ASIN'].values:
                     new_row = asin_row.copy()
-                    new_row['Curr_match'] = 0
                     master_v = pd.concat([master_v, new_row], ignore_index=True)
-                # Skip the rest of the loop to avoid adding to manual_check
-                continue
+                    items_added_to_master_v += 1
 
-        # If ASIN is not found or not blacklisted with 'V', add to manual_check
-        if asin not in manual_check['ASIN'].values:
+    # If ASIN is not found or not blacklisted with 'V' or 'Y', add to manual_check
+    for asin in input_df['ASIN']:
+        if asin not in black_listed_y['ASIN'].values and asin not in master_v['ASIN'].values:
             input_row = input_df[input_df['ASIN'] == asin].copy()
-            manual_check = pd.concat([manual_check, input_row], ignore_index=True)
+            black_listed_y = pd.concat([black_listed_y, input_row], ignore_index=True)
+            items_added_to_black_listed_y += 1
 
-    # Remove duplicates based on 'ASIN' in manual_check
-    manual_check.drop_duplicates(subset=['ASIN'], keep='last', inplace=True)
+    # Remove duplicates based on 'ASIN' in black_listed_y
+    black_listed_y.drop_duplicates(subset=['ASIN'], keep='last', inplace=True)
 
     # Save the updated files
+    black_listed_y.to_csv(Black_Listed_Y, index=False)
     master_v.to_csv(master_v_file, index=False)
-    manual_check.to_csv(Black_Listed_Y, index=False)
+
+    # Print the number of items added to master_v_file and black_listed_y file
+    print(f"{items_added_to_master_v} items were added to master_v_file.")
+    print(f"{items_added_to_black_listed_y} items were added to black_listed_y file.")
 
     print("Files have been updated.")
-
+    
 import pandas as pd
 
 def create_manualcheck_file(input_file):
@@ -551,6 +528,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Pr
 
     # After processing, save the updated DataFrames
     Curr_Listed.to_csv(Output_File_Price_Update, index=False)
+    
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety
 
@@ -655,6 +633,138 @@ def update_blacklist_from_master_v(asin, value):
     # Save updated Master_DB.csv
     master_db_df.to_csv(master_db_path, index=False)
 
+def update_master_db_without_gogolescrappingpy(master_db_path, update_csv_path, manual_Update_Ouput):
+    # Check if Master_DB.csv exists
+    if os.path.exists(master_db_path):
+        # Read Master_DB.csv
+        master_db = pd.read_csv(master_db_path)
+    else:
+        # Create an empty DataFrame if Master_DB.csv doesn't exist
+        master_db = pd.DataFrame(columns=['Title', 'Sales Rank: 30 days avg.', 'Sales Rank: 90 days avg.', 'Buy Box: Current',
+                                           'Buy Box: Stock', 'New: Current', 'Referral Fee %', 'New, 3rd Party FBM: 30 days avg.',
+                                           'Lowest FBM Seller', 'Count of retrieved live offers: New, FBM', 'ASIN',
+                                           'Product Codes: EAN', 'Product Codes: UPC', 'Parent ASIN', 'Brand',
+                                           'Prime Eligible (Amazon offer)', 'Custom_SKU', 'Google_Search_Link', 'Match',
+                                           'Amazon_link', 'Extraction_Link', 'Store', 'Price', 'Min Price', 'Max Price',
+                                           'Amazon_List_price', 'Can_List', 'Blacklisted', 'Curr_Listed?'])
+
+    # Read Update_CSV.csv
+    update_csv = pd.read_csv(update_csv_path)
+
+    # Counter for added items
+    added_count = 0
+
+    # Iterate through rows in Update_CSV and update Master_DB accordingly
+    for index, row in update_csv.iterrows():
+        asin = row['ASIN']
+        black_list = row.get('Blacklisted')
+        ean = row.get('Product Codes: EAN')
+        upc = row["Product Codes: UPC"]
+
+        # Find the row in Master_DB that matches the ASIN
+        master_row_index = master_db.index[master_db['ASIN'] == asin]
+
+        if not master_row_index.empty:
+            # ASIN found in Master_DB, update Blacklist if provided
+            if black_list is not None:
+                master_db.loc[master_row_index, 'Blacklisted'] = black_list
+        else:
+            # ASIN not found in Master_DB, add a new row
+            new_row = pd.DataFrame({'Title': [row['Title']], 'Sales Rank: 30 days avg.': [row['Sales Rank: 30 days avg.']],
+                                    'Sales Rank: 90 days avg.': [row['Sales Rank: 90 days avg.']], 'Buy Box: Current': [row['Buy Box: Current']],
+                                    'Buy Box: Stock': [row['Buy Box: Stock']], 'New: Current': [row['New: Current']],
+                                    'Referral Fee %': [row['Referral Fee %']], 'New, 3rd Party FBM: 30 days avg.': [row['New, 3rd Party FBM: 30 days avg.']],
+                                    'Lowest FBM Seller': [row['Lowest FBM Seller']], 'Count of retrieved live offers: New, FBM': [row['Count of retrieved live offers: New, FBM']],
+                                    'ASIN': [asin], 'Product Codes: EAN': [ean], 'Product Codes: UPC': [upc],
+                                    'Parent ASIN': [row['Parent ASIN']], 'Brand': [row['Brand']],
+                                    'Prime Eligible (Amazon offer)': [row['Prime Eligible (Amazon offer)']],
+                                    'Custom_SKU': [row['Custom_SKU']], 'Google_Search_Link': [row['Google_Search_Link']],
+                                    'Match': [row['Match']], 'Amazon_link': [row['Amazon_link']],
+                                    'Extraction_Link': [row['Extraction_Link']], 'Store': [row['Store']],
+                                    'Price': [row['Price']], 'Min Price': [row['Min Price']], 'Max Price': [row['Max Price']],
+                                    'Amazon_List_price': [row['Amazon_List_price']], 'Can_List': [row['Can_List']],
+                                    'Blacklisted': [black_list], 'Curr_Listed?': [row['Curr_Listed?']]})
+            master_db = pd.concat([master_db, new_row], ignore_index=True)
+            added_count += 1
+
+    # Save the updated Master_DB
+    master_db.to_csv(manual_Update_Ouput, index=False)
+
+    print(f"{added_count} items were added to Master_DB successfully.")
+
+def prepare_manual_only_import(input_file, output_file):
+    # Read the input CSV file
+    print("Working")
+    spreadsheet = pd.read_csv(input_file)
+
+    # Save temp data
+    temp_blacklisted = spreadsheet['Black_list'].copy()
+    temp_pid = spreadsheet['PID'].copy()
+
+    # Delete the columns
+    del spreadsheet['Black_list']
+    del spreadsheet['PID']
+
+    # Define a function to process each row
+    def process_row(row, blacklisted, pid):
+        upc = row['Product Codes: UPC']
+        
+        row['Prime Eligible (Amazon offer)'] = None
+        # Custom_SKU
+        row['Custom_SKU'] = "GB" + str(upc)
+
+        # Google_Search_Link
+        row['Google_Search_Link'] = create_google_shopping_link(upc, row['Title'])
+
+        # Amazon_link
+        row['Amazon_link'] = create_amazon_link(row['ASIN'])
+
+        # Match
+        row['Match'] = "Y"
+
+        # Use temp PID data for Extraction_Link
+        product_code = pid[row.name]  # Using row index to match
+        if product_code == "none":
+            row['Extraction_Link'] = None
+        else:
+            row['Extraction_Link'] = f'https://www.google.com/shopping/product/{product_code}/offers?q={upc}&prds=cid:{product_code},cond:1'
+        
+        # Set other fields to None or initial values
+        row['Store'] = None
+        row['Price'] = None
+        row['Min Price'] = None
+        row['Max Price'] = None
+        row['Amazon_List_price'] = None
+        row['Can_List'] = "N"
+        row['Curr_Listed?'] = 0
+
+        # Use temp Blacklisted data
+        row['Blacklisted'] = blacklisted[row.name]  # Using row index to match
+
+        return row
+
+    # Apply the function to each row, passing the temp data as additional arguments
+    spreadsheet = spreadsheet.apply(lambda row: process_row(row, temp_blacklisted, temp_pid), axis=1)
+
+    # Define the columns order and rearrange the DataFrame
+    columns_order = [
+        'Title', 'Sales Rank: 30 days avg.', 'Sales Rank: 90 days avg.', 'Buy Box: Current',
+        'Buy Box: Stock', 'New: Current', 'New: Highest', 'Referral Fee %',
+        'New, 3rd Party FBM: 30 days avg.', 'Lowest FBM Seller', 
+        'Count of retrieved live offers: New, FBM', 'ASIN', 'Product Codes: EAN', 
+        'Product Codes: UPC', 'Parent ASIN', 'Brand', 'Prime Eligible (Amazon offer)',
+        'Custom_SKU', 'Google_Search_Link', 'Match', 'Amazon_link', 'Extraction_Link', 
+        'Store', 'Price', 'Min Price', 'Max Price', 'Amazon_List_price', 'Can_List', 'Blacklisted', 
+        'Curr_Listed?'
+    ]
+    spreadsheet = spreadsheet.reindex(columns=columns_order, fill_value=None)
+
+    # Save the prepared DataFrame to a new CSV file
+    spreadsheet.to_csv(output_file, index=False)
+
+    print(f"Prepared data saved to {output_file}")
+
+
 import http.client
 import mimetypes
 from codecs import encode
@@ -693,4 +803,86 @@ def upload_file(file_path):
     print(data.decode("utf-8"))
 
 
-upload_file(file_path)
+
+
+def create_google_shopping_link(upc, title):
+    base_url = "https://www.google.com/search?"
+    query_parameters = {
+        "q": f"{upc} {title}",
+        "tbm": "shop"
+    }
+    encoded_query = urllib.parse.urlencode(query_parameters, quote_via=urllib.parse.quote_plus)
+    return base_url + encoded_query
+
+def create_amazon_link(asin):
+    base_url = "https://www.amazon.com/dp/"
+    return f"{base_url}{asin}?psc=1"
+
+import csv
+import os
+
+def combine_csv_files(file1_path, file2_path, output_dir="KeepaExports"):
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Read the first row from one of the CSV files
+    with open(file1_path, 'r', newline='', encoding='utf-8') as file1:
+        reader = csv.reader(file1)
+        first_row = next(reader)
+    
+    # Write the combined data to the output CSV file
+    output_file = os.path.join(output_dir, "Keepa_Update.csv")
+    with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+        writer = csv.writer(outfile)
+        
+        # Write the first row
+        writer.writerow(first_row)
+        
+        # Append the remaining rows from both files
+        for file_path in [file1_path, file2_path]:
+            with open(file_path, 'r', newline='', encoding='utf-8') as infile:
+                next(infile)  # Skip the first row
+                reader = csv.reader(infile)
+                for row in reader:
+                    writer.writerow(row)
+    
+    print("CSV files combined successfully. Output file:", output_file)
+
+def update_master_v(keepa_file, master_file):
+    # Step 1: Load Keepa_Update Data
+    keepa_data = {}
+    with open(keepa_file, mode='r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            asin = row['ASIN']
+            # Store and clean Buy Box: Current, New: Current values for each ASIN, and store Lowest FBM Seller as is
+            keepa_data[asin] = {
+                'Buy Box: Current': clean_and_convert_price(row['Buy Box: Current']),
+                'New: Current': clean_and_convert_price(row['New: Current']),
+                'New: Highest': clean_and_convert_price(row['New: Highest']),
+                'Lowest FBM Seller': row.get('Lowest FBM Seller')  # No cleaning needed
+            }
+    
+    # Step 2: Read MasterV and Prepare Updated Data
+    updated_rows = []
+    with open(master_file, mode='r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        fieldnames = reader.fieldnames
+        for row in reader:
+            asin = row['ASIN']
+            if asin in keepa_data:
+                # Update values from Keepa_Update after cleaning and converting
+                row['Buy Box: Current'] = keepa_data[asin]['Buy Box: Current']
+                row['New: Current'] = keepa_data[asin]['New: Current']
+                row['New: Highest'] = keepa_data[asin]['New: Highest']
+                # Directly update Lowest FBM Seller
+                row['Lowest FBM Seller'] = keepa_data[asin]['Lowest FBM Seller']
+            updated_rows.append(row)
+    
+    # Step 3: Write Updates Back to MasterV
+    with open(master_file, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(updated_rows)
+    print("Done")
+
