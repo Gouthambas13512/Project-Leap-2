@@ -6,22 +6,22 @@ import os
 #1
 #Combine keepa exports and get "need to verify" and Verified
 #OUTPUT: Keepa_Export_Combined.csv
-input_files = ["KeepaExports/Newbalance_All.csv"]
+input_files = ["KeepaExports\RA_Orders_Not_in_DB.csv","KeepaExports\Scan_1.csv","KeepaExports\Scan_2.csv"]
 # Merge each input file and export only the NEW items not in DB
 #OUPUT: Keepa_Combined_Export.csv
-"""
+'''
 for file in input_files:
     if os.path.exists(file):
         mf.merge_csv(file)
     else:
         print(f"File '{file}' not found.")
-"""
+'''
 
 #1.5
 #IF RUNNING THIS, SKIP 2
 #Input: Keepa_Combined_Export.csv NEW items which have Black_list and PID column with filled data
 #Output: Is the Output_File ready to go directly into MasterDB and MasterV
-Prepare_Import_File = "KeepaExports/Keepa_Combined_Export.csv"
+Prepare_Import_File = "Keepa_Combined_Export.csv"
 Output_File = "KeepaExports/prepared_output.csv"
 #mf.prepare_manual_only_import(Prepare_Import_File, Output_File)
 
@@ -42,9 +42,9 @@ master_db_path = 'DataBaseFiles/Master_DB.csv'
 manual_Update_Ouput = master_db_path
 #**CODE BELOW---------
 #TRY THIS NEW CODE
-#mf.update_master_db_w_manualcheck(master_db_path, update_csv_path, manual_Update_Ouput)
+#mf.update_master_db_w_manualcheck(master_db_path, update_csv_path)
 #Below updates masterDB from prepared_output
-#mf.update_master_db_without_gogolescrappingpy(master_db_path, update_csv_path, manual_Update_Ouput)
+#mf.update_master_db_without_gogolescrappingpy(master_db_path, update_csv_path,manual_Update_Ouput)
 
 
 #4
@@ -85,11 +85,13 @@ remote_file_name = 'MasterV.csv' # The name you want the uploaded file to have
 #Tells us if we can list a product. Updates (Amazon_List_price)
 #Here we can use filter_and_export to neglect any brand before running
 #EXPORT: Updates MasterV to itself
-MasterV_Brands_To_Update = 'DataBaseFiles/MasterV.csv'
+MasterV_Brands_To_Update = 'DataBaseFiles\\North Face File.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
-Output_File_Price_Update = 'DataBaseFiles/MasterV.csv'
+Output_File_Price_Update = 'DataBaseFiles\\North Face File.csv'
 #**CODE BELOW---------
-mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update)
+
+#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update)
+
 #mf.upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
 
 
