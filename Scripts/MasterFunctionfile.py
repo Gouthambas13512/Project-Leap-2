@@ -15,7 +15,7 @@ from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
 
 def find_lowest_price_store_with_scrapfly(product_url):
     api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
-    additional_stores = ['Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
+    additional_stores = ['Outdoor Gear Exchange','The Deep End Swim and Sportswear','Metro Swim Shop','Elsmore Swim Shop','Xtreme Swim','Sears - BHFO', 'Shop Premium Outlets', 'Walmart - BHFO, Inc.','APerfectDealer', 'Van Dyke and Bacon', 'TC Running Co','eBay',"Macy's",'Kenco Outfitters','Grivet Outdoors','TravelCountry.com','EMS','Famous Brands','Walmart - BuyBox Club','Baseball Savings.com','Sears - Ricci Berri', 'Slam Jam', 'mjfootwear.com', 'Sports Basement', 'ModeSens','Runnerinn.com','ShoeVillage.com','Running Zone','The Heel Shoe Fitters','Nikys Sports',"Beck's Shoes",'Next Step Athletics', "Brown's Shoe Fit Co. Dubuque", 'Super Shoes', 'JosephBeauty', 'Pants Store', 'Fingerhut', "Brown's Shoe Fit Co. Longview", 'Deporvillage.net' ]
     Black_List_Store = ["Chiappetta Shoes", "Sole Desire", "Shoe Station", "Bloomingdale's", "Lucky Shoes", "Glik's", "RushOrderTees", "Shoe Carnival", "FrontRunners LA", "Roderer Shoe Center", "Rogans Shoes", "Goodmiles Running Company", "Gazelle Sports", "Confluence Running", "Holabird Sports", "ssense.com", "Lyst", "Fleet Feet"]
 
     scrapfly = ScrapflyClient(key=api_key)
@@ -64,7 +64,7 @@ def find_lowest_price_store_with_scrapfly(product_url):
                         shipping_cost = calculate_shipping_cost(shipping_text)
 
                         total_price = price + shipping_cost
-                        total_price = round(total_price, 2)
+                        total_price = total_price
 
                         if is_preferred_store(quality_tag, store_name, additional_stores):
                             if lowest_price is None or total_price < lowest_price:
@@ -468,7 +468,8 @@ def update_link(master_db_path, update_csv_path):
 def process_row_with_scrapingbee(row, index):
     MIN_ROI = 1.7
     MAX_ROI = 1.87
-    print(f"Working on row {index}")
+    print(f"Starting processing of row {index}")
+
     # Initialize default values for the updates
     update_info = {
         'Store': None,
@@ -481,31 +482,54 @@ def process_row_with_scrapingbee(row, index):
     }
 
     product_url = row['Extraction_Link']
+
     if pd.notna(product_url):
         # Attempt to find the lowest price store using the given product URL
         try:
             lowest_price_store, price = find_lowest_price_store_with_scrapfly(product_url)
+            print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store}")
 
             if price is not None:
-                # Calculate the Min Price, Max Price, and Amazon List Price based on the retrieved price
-                min_price = round(price * MIN_ROI,2)
-                max_price = round(price * MAX_ROI,2)
-                amazon_list_price = round(calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price}),2)
+                # Calculate the Min Price, Max Price based on the retrieved price
+                min_price = round(price * MIN_ROI, 2)
+                max_price = round(price * MAX_ROI, 2)
+                print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
 
-                # Update the row information with the calculated values only if Amazon_List_price is not None
+                # Calculate Amazon List Price based on the retrieved and calculated prices
+                calculated_value = calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
+                amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
+                print(f"Row {index}: Calculated Amazon List Price: ${amazon_list_price}")
+
+                # Update the row information with the calculated values
+                update_info.update({
+                    'Store': lowest_price_store,
+                    'Price': price,
+                    'Min Price': min_price,
+                    'Max Price': max_price,
+                })
+
+                # Update additional fields only if Amazon_List_price is not None
                 if amazon_list_price is not None:
                     update_info.update({
-                        'Store': lowest_price_store,
-                        'Price': price,
-                        'Min Price': min_price,
-                        'Max Price': max_price,
                         'Amazon_List_price': amazon_list_price,
                         'Can_List': "Y",  # Update to "Y" since we have valid pricing information
                         'Curr_Listed?': 1
                     })
+                    print(f"Row {index}: Updated listing info. Can List: 'Y', Currently Listed: 1")
+                else:
+                    # Retain default values if Amazon_List_price is None
+                    update_info.update({
+                        'Amazon_List_price': None,
+                        'Can_List': "N",
+                        'Curr_Listed?': 0
+                    })
+                    print(f"Row {index}: No valid Amazon List Price found. Retaining default values.")
+
         except Exception as e:
             print(f"Error processing row {index}: {e}")
             # If an error occurs, retain default update_info which indicates failure
+    else:
+        print(f"Row {index}: No valid URL found. Skipping processing.")
 
     # Return a tuple containing the index and the update information
     # This allows the calling function to know which row this information pertains to
