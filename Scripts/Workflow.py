@@ -21,7 +21,7 @@ for file in input_files:
 #IF RUNNING THIS, SKIP 2
 #Input: Keepa_Combined_Export.csv NEW items which have Black_list and PID column with filled data
 #Output: Is the Output_File ready to go directly into MasterDB and MasterV
-Prepare_Import_File = "Keepa_Combined_Export.csv"
+Prepare_Import_File = "KeepaExports\Keepa_Combined_Export - Sheet1.csv"
 Output_File = "KeepaExports/prepared_output.csv"
 #mf.prepare_manual_only_import(Prepare_Import_File, Output_File)
 
@@ -42,7 +42,8 @@ master_db_path = 'DataBaseFiles/Master_DB.csv'
 manual_Update_Ouput = master_db_path
 #**CODE BELOW---------
 #TRY THIS NEW CODE
-#mf.update_master_db_w_manualcheck(master_db_path, update_csv_path)
+##mf.update_master_db_w_manualcheck(master_db_path, update_csv_path)
+
 #Below updates masterDB from prepared_output
 #mf.update_master_db_without_gogolescrappingpy(master_db_path, update_csv_path,manual_Update_Ouput)
 
@@ -69,16 +70,6 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 #OUTPUT this will update MasterV
 #**CODE BELOW
 #mf.update_master_v('KeepaExports\Keepa_Update.csv', 'DataBaseFiles\MasterV.csv')
-
-hostname = '54.167.213.74'
-#port = 21
-username = 'ftpuser'
-password = 'Agile@123'
-local_file_path = 'DataBaseFiles/MasterV.csv'  # Make sure this is the correct path to your CSV file
-remote_dir_path = '/'  # This should be the directory on the server where you want to store your file
-remote_file_name = 'MasterV.csv' # The name you want the uploaded file to have
-#Updates the CSV path for the UI
-#mf.upload_csv_via_ftp(hostname, username, password, local_file_path, remote_dir_path, remote_file_name)
 
 
 #6

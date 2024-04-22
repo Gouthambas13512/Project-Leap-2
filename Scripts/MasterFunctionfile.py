@@ -85,6 +85,11 @@ def find_lowest_price_store_with_scrapfly(product_url):
 
     return None, None
 
+def log_to_file(message):
+    with open('ErrorHandling.txt', 'a') as f:
+        f.write(message + '\n')
+    f.close()
+
 def merge_csv(input_file):
     # Specify the output file name
     output_file = "Keepa_Combined_Export.csv"
@@ -487,26 +492,32 @@ def process_row_with_scrapingbee(row, index):
         # Attempt to find the lowest price store using the given product URL
         try:
             lowest_price_store, price = find_lowest_price_store_with_scrapfly(product_url)
-            print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store}")
+            log_to_file(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for asin {row['ASIN']}")
+            print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for asin {row['ASIN']}")
 
             if price is not None:
                 # Calculate the Min Price, Max Price based on the retrieved price
                 min_price = round(price * MIN_ROI, 2)
                 max_price = round(price * MAX_ROI, 2)
+                log_to_file(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
                 print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
-
-                # Calculate Amazon List Price based on the retrieved and calculated prices
-                calculated_value = calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
-                amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
-                print(f"Row {index}: Calculated Amazon List Price: ${amazon_list_price}")
 
                 # Update the row information with the calculated values
                 update_info.update({
+                    
                     'Store': lowest_price_store,
                     'Price': price,
                     'Min Price': min_price,
                     'Max Price': max_price,
                 })
+
+                                # Log what's being updated
+                log_to_file(f"Row {index}: Updating Store to {lowest_price_store}, Price to {price}, Min Price to {min_price}, Max Price to {max_price}")
+
+                calculated_value = calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
+                amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
+                log_to_file(f"Row {index}: Calculated Amazon List Price: ${amazon_list_price}")
+
 
                 # Update additional fields only if Amazon_List_price is not None
                 if amazon_list_price is not None:
@@ -515,7 +526,7 @@ def process_row_with_scrapingbee(row, index):
                         'Can_List': "Y",  # Update to "Y" since we have valid pricing information
                         'Curr_Listed?': 1
                     })
-                    print(f"Row {index}: Updated listing info. Can List: 'Y', Currently Listed: 1")
+                    log_to_file(f"Row {index}: Updated listing info. Can List: 'Y', Currently Listed: 1")
                 else:
                     # Retain default values if Amazon_List_price is None
                     update_info.update({
@@ -523,13 +534,13 @@ def process_row_with_scrapingbee(row, index):
                         'Can_List': "N",
                         'Curr_Listed?': 0
                     })
-                    print(f"Row {index}: No valid Amazon List Price found. Retaining default values.")
+                    log_to_file(f"Row {index}: No valid Amazon List Price found. Retaining default values.")
 
         except Exception as e:
-            print(f"Error processing row {index}: {e}")
+            log_to_file(f"Error processing row {index}: {e}")
             # If an error occurs, retain default update_info which indicates failure
     else:
-        print(f"Row {index}: No valid URL found. Skipping processing.")
+        log_to_file(f"Row {index}: No valid URL found. Skipping processing.")
 
     # Return a tuple containing the index and the update information
     # This allows the calling function to know which row this information pertains to
