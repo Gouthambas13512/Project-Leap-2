@@ -21,7 +21,7 @@ for file in input_files:
 #IF RUNNING THIS, SKIP 2
 #Input: Keepa_Combined_Export.csv NEW items which have Black_list and PID column with filled data
 #Output: Is the Output_File ready to go directly into MasterDB and MasterV
-Prepare_Import_File = "KeepaExports\Keepa_Combined_Export - Sheet1.csv"
+Prepare_Import_File = "KeepaExports\Keepa_Combined_Export.csv"
 Output_File = "KeepaExports/prepared_output.csv"
 #mf.prepare_manual_only_import(Prepare_Import_File, Output_File)
 
@@ -61,7 +61,7 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 
 
 # Combine the CSV outputs from keep into one file
-#mf.combine_csv_files(r"KeepaExports\file1_export.csv", r"KeepaExports\file2_export.csv")
+#mf.combine_csv_files(r"KeepaExports\file1_export.csv", r"KeepaExports\file2_export.csv", r"KeepaExports\file3_export.csv")
 
 
 #5

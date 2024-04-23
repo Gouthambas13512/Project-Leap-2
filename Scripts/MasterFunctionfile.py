@@ -214,24 +214,24 @@ def calculate_amazon_list_price(row):
         return row['Buy Box: Current'] - 1
 
     # If Buy Box is not available, check New: Current if it's available and meets the minimum price requirement
-    if pd.notna(row['New: Current']) and row['New: Current'] > row['Min Price']:
+    elif pd.notna(row['New: Current']) and row['New: Current'] > row['Min Price']:
         return row['New: Current'] - 1
 
     # If either number is available and not greater than Min Price then return none
-    if (pd.notna(row['Buy Box: Current']) or pd.notna(row['New: Current'])) and \
-       ((pd.notna(row['Buy Box: Current']) and row['Buy Box: Current'] <= row['Min Price']) or 
-        (pd.notna(row['New: Current']) and row['New: Current'] <= row['Min Price'])):
+    elif (pd.notna(row['Buy Box: Current']) or pd.notna(row['New: Current'])) and \
+       ((pd.notna(row['Buy Box: Current']) and row['Buy Box: Current'] < row['Min Price']) or 
+        (pd.notna(row['New: Current']) and row['New: Current'] < row['Min Price'])):
         return None
 
     # If neither is available, check if Max Price < New: Highest
-    if pd.notna(row['New: Highest']):
+    elif pd.notna(row['New: Highest']):
         if row['Max Price'] < row['New: Highest']:
             return row['New: Highest']
         # Removed incorrect condition and added correct logic to not return New: Highest when below Min Price
         elif row['New: Highest'] < row['Min Price']:
             return None  # This condition ensures that New: Highest is not returned if it's below Min Price
         # Correct handling if New: Highest is between Min Price and Max Price
-        elif row['Min Price'] <= row['New: Highest'] < row['Max Price']:
+        elif row['Min Price'] < row['New: Highest'] < row['Max Price']:
             return row['New: Highest']
 
 
@@ -857,7 +857,7 @@ def create_amazon_link(asin):
 import csv
 import os
 
-def combine_csv_files(file1_path, file2_path, output_dir="KeepaExports"):
+def combine_csv_files(file1_path, file2_path, file3_path, output_dir="KeepaExports"):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -874,8 +874,8 @@ def combine_csv_files(file1_path, file2_path, output_dir="KeepaExports"):
         # Write the first row
         writer.writerow(first_row)
         
-        # Append the remaining rows from both files
-        for file_path in [file1_path, file2_path]:
+        # Append the remaining rows from all three files
+        for file_path in [file1_path, file2_path, file3_path]:
             with open(file_path, 'r', newline='', encoding='utf-8') as infile:
                 next(infile)  # Skip the first row
                 reader = csv.reader(infile)

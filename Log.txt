@@ -15,3 +15,4 @@ April 19, 2024: Make North Face file for manual scanning, Fix MasterV, MasterV #
 April 20,2024: Make export file for 4 brands, MasterV # 16079, All uploaded with new pricing, also DP
 April 21,2024: No new export, MasterV # 16079, All uploaded with new pricing, also DP
 April 22,2024: No new export, MasterV # 18658 for UBI and 1700 for DP, All uploaded with new pricing, also DP
+April 23,2024: No new export, MasterV # 19565 for UBI and 1700 for DP, All uploaded with new pricing, also DP
