@@ -530,8 +530,6 @@ update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.
 
 
 def process_row_with_scrapingbee(row, index):
-    MIN_ROI = 1.7
-    MAX_ROI = 1.87
     print(f"Starting processing of row {index}")
 
     # Initialize default values for the updates
@@ -555,28 +553,26 @@ def process_row_with_scrapingbee(row, index):
             print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for asin {row['ASIN']}")
 
             if price is not None:
-                # Calculate the Min Price, Max Price based on the retrieved price
-                min_price = round(price * MIN_ROI, 2)
-                max_price = round(price * MAX_ROI, 2)
+                # Calculate the Min Price based on the retrieved price
+                min_price = round(price * get_price_multiplier(price), 2)
+                max_price = round(min_price * 1.87, 2)
                 log_to_file(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
                 print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
 
                 # Update the row information with the calculated values
                 update_info.update({
-                    
                     'Store': lowest_price_store,
                     'Price': price,
                     'Min Price': min_price,
                     'Max Price': max_price,
                 })
 
-                                # Log what's being updated
+                # Log what's being updated
                 log_to_file(f"Row {index}: Updating Store to {lowest_price_store}, Price to {price}, Min Price to {min_price}, Max Price to {max_price}")
 
                 calculated_value = calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
                 amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
                 log_to_file(f"Row {index}: Calculated Amazon List Price: ${amazon_list_price}")
-
 
                 # Update additional fields only if Amazon_List_price is not None
                 if amazon_list_price is not None:
@@ -604,6 +600,27 @@ def process_row_with_scrapingbee(row, index):
     # Return a tuple containing the index and the update information
     # This allows the calling function to know which row this information pertains to
     return (index, update_info)
+
+def get_price_multiplier(price):
+    if price <= 14.45:
+        return 3
+    elif price <= 29.45:
+        return 2
+    elif price <= 39.45:
+        return 1.875
+    elif price <= 49.45:
+        return 1.84
+    elif price <= 59.45:
+        return 1.78
+    elif price <= 79.45:
+        return 1.7
+    elif price <= 129.45:
+        return 1.67
+    elif price <= 159.45:
+        return 1.50
+    else:
+        return 1.47
+
 
 
 def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update):
