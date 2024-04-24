@@ -12,6 +12,7 @@ import MasterFunctionfile as mf
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib
 from scrapfly import ScrapflyClient, ScrapeConfig, ScrapeApiResponse
+from datetime import datetime
 
 def find_lowest_price_store_with_scrapfly(product_url):
     api_key = 'scp-test-6fc24c20fe1f4ba0a171e7355e9ab34f'  # Replace with your actual Scrapfly API key
@@ -467,6 +468,64 @@ def update_link(master_db_path, update_csv_path):
     # Save the updated Master_DB
     master_db.to_csv(master_db_path, index=False)
 
+import pandas as pd
+from datetime import datetime
+import os
+
+def update_listing_stats(master_csv_path, results_csv_path):
+    """
+    Update and save the listing statistics based on the master CSV file.
+
+    Args:
+    master_csv_path (str): Path to the master CSV file.
+    results_csv_path (str): Path to save the updated results CSV file.
+    """
+    # Read the data from the CSV file
+    df = pd.read_csv(master_csv_path)
+
+    # Group by the "Brand" column and count the number of rows for each brand
+    brand_counts_all = df.groupby('Brand').size()
+
+    # Filter the DataFrame where 'Curr_Listed?' equals 1
+    filtered_df = df[df['Curr_Listed?'] == 1]
+
+    # Group by the "Brand" column in the filtered DataFrame and count the number of rows for each brand
+    brand_counts_curr_listed = filtered_df.groupby('Brand').size()
+
+    # Get the current date
+    current_date = datetime.now().strftime('%Y-%m-%d')
+
+    # Create a DataFrame to store the results
+    results_df = pd.DataFrame({
+        'Brand': brand_counts_all.index,
+        'All_Listings_Count': brand_counts_all.values,
+        'Current_Listings_Count': brand_counts_curr_listed.reindex(brand_counts_all.index, fill_value=0).values,
+        'Date': [current_date] * len(brand_counts_all)
+    })
+
+    # Check if the result file exists to append or create new
+    if os.path.exists(results_csv_path):
+        # Read existing data
+        existing_data = pd.read_csv(results_csv_path)
+        
+        # Combine existing data with new results
+        combined_data = pd.concat([existing_data, results_df])
+        
+        # Drop duplicates: adjust subset to your needs for identifying duplicates
+        clean_data = combined_data.drop_duplicates(subset=['Brand', 'Date'], keep='last')
+        
+        # Save the clean data back to the CSV file
+        clean_data.to_csv(results_csv_path, index=False)
+    else:
+        # Create a new file and write headers if file does not exist
+        results_df.to_csv(results_csv_path, index=False)
+
+    print(f"\nUpdated results saved to '{results_csv_path}'")
+
+# Example usage
+update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.csv')
+
+
 
 
 
@@ -564,6 +623,8 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Pr
 
     # After processing, save the updated DataFrames
     Curr_Listed.to_csv(Output_File_Price_Update, index=False)
+    upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
+    update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.csv')
     
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety

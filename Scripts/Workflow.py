@@ -68,7 +68,7 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 #This takes Keepa_update which is all the verified Listings and updates the masterV with current Buybox:current, current, and store 
 #Need to pull the updated data from Keepa. In this section you can neglect certain brands
 #OUTPUT this will update MasterV
-#**CODE BELOW
+#CODE BELOW
 #mf.update_master_v('KeepaExports\Keepa_Update.csv', 'DataBaseFiles\MasterV.csv')
 
 
