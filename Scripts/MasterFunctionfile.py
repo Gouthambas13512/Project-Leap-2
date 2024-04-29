@@ -529,7 +529,7 @@ update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.
 
 
 
-def process_row_with_scrapingbee(row, index):
+def process_row_with_scrapingbee(row, index, brand_to_list):
     print(f"Starting processing of row {index}")
 
     # Initialize default values for the updates
@@ -543,19 +543,24 @@ def process_row_with_scrapingbee(row, index):
         'Curr_Listed?': 0
     }
 
-    product_url = row['Extraction_Link']
 
-    if pd.notna(product_url):
-        # Attempt to find the lowest price store using the given product URL
+    product_url = row['Extraction_Link']
+    brand = row['Brand'].strip().lower() if pd.notna(row['Brand']) else ''
+
+    brands_to_process = [brand.lower() for brand in brand_to_list]
+
+    if brand in brands_to_process and pd.notna(product_url):
+        log_to_file(f"brand:{brand} asin:{row['ASIN']} passed the test")
+        # Proceed with processing only if brand is in the brand_to_list and URL is not missing
         try:
             lowest_price_store, price = find_lowest_price_store_with_scrapfly(product_url)
             log_to_file(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for asin {row['ASIN']}")
             print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for asin {row['ASIN']}")
 
             if price is not None:
-                # Calculate the Min Price based on the retrieved price
+                # Calculate the Min Price and Max Price based on the retrieved price
                 min_price = round(price * get_price_multiplier(price), 2)
-                max_price = round(min_price * 1.87, 2)
+                max_price = round(min_price * 1.09, 2)
                 log_to_file(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
                 print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
 
@@ -567,10 +572,7 @@ def process_row_with_scrapingbee(row, index):
                     'Max Price': max_price,
                 })
 
-                # Log what's being updated
-                log_to_file(f"Row {index}: Updating Store to {lowest_price_store}, Price to {price}, Min Price to {min_price}, Max Price to {max_price}")
-
-                calculated_value = calculate_amazon_list_price({**row.to_dict(), 'Price': price, 'Min Price': min_price, 'Max Price': max_price})
+                calculated_value = calculate_amazon_list_price({**row.to_dict(), **update_info})
                 amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
                 log_to_file(f"Row {index}: Calculated Amazon List Price: ${amazon_list_price}")
 
@@ -584,21 +586,13 @@ def process_row_with_scrapingbee(row, index):
                     log_to_file(f"Row {index}: Updated listing info. Can List: 'Y', Currently Listed: 1")
                 else:
                     # Retain default values if Amazon_List_price is None
-                    update_info.update({
-                        'Amazon_List_price': None,
-                        'Can_List': "N",
-                        'Curr_Listed?': 0
-                    })
                     log_to_file(f"Row {index}: No valid Amazon List Price found. Retaining default values.")
-
         except Exception as e:
             log_to_file(f"Error processing row {index}: {e}")
             # If an error occurs, retain default update_info which indicates failure
     else:
-        log_to_file(f"Row {index}: No valid URL found. Skipping processing.")
+        log_to_file(f"Row {index} brand row {row['Brand']} compared to : Brand not eligible or no valid URL found. Skipping processing.")
 
-    # Return a tuple containing the index and the update information
-    # This allows the calling function to know which row this information pertains to
     return (index, update_info)
 
 def get_price_multiplier(price):
@@ -621,15 +615,23 @@ def get_price_multiplier(price):
     else:
         return 1.47
 
+def keepa_asin_import(brands_2):
+    # Reading the CSV file
+    df = pd.read_csv('DataBaseFiles/MasterV.csv')
+    
+    # Filtering the DataFrame for the brands in brands_2
+    filtered_df = df[df['Brand'].isin(brands_2)]
+    
+    # Writing the filtered DataFrame to a new CSV file, keeping the header
+    filtered_df.to_csv('KeepaExports/Keepa_asin_import.csv', index=False)
 
-
-def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update):
+def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update, brand_to_list):
     Curr_Listed = pd.read_csv(Curr_Listed_path)
     master_db = pd.read_csv(master_db_path)
 
     with ThreadPoolExecutor(max_workers=50) as executor:
-        # Submit tasks for each row
-        futures = [executor.submit(process_row_with_scrapingbee, row, index) for index, row in Curr_Listed.iterrows()]
+        # Submit tasks for each row, passing brand_to_list to the processing function
+        futures = [executor.submit(process_row_with_scrapingbee, row, index, brand_to_list) for index, row in Curr_Listed.iterrows()]
 
         # Process results as they complete
         for future in as_completed(futures):
@@ -645,7 +647,6 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Pr
     
     print("Done")
     # Handle master_db updates outside of the concurrent processing block to ensure thread safety
-
 
 def count_rows(csv_file):
     try:
