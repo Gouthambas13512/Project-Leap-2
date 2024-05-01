@@ -530,6 +530,8 @@ update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.
 
 
 def process_row_with_scrapingbee(row, index, brand_to_list):
+    MIN_ROI = 1.7
+    MAX_ROI = 1.87
     print(f"Starting processing of row {index}")
 
     # Initialize default values for the updates
@@ -542,7 +544,6 @@ def process_row_with_scrapingbee(row, index, brand_to_list):
         'Can_List': "N",  # Default to "N", will update if conditions are met
         'Curr_Listed?': 0
     }
-
 
     product_url = row['Extraction_Link']
     brand = row['Brand'].strip().lower() if pd.notna(row['Brand']) else ''
@@ -559,8 +560,8 @@ def process_row_with_scrapingbee(row, index, brand_to_list):
 
             if price is not None:
                 # Calculate the Min Price and Max Price based on the retrieved price
-                min_price = round(price * get_price_multiplier(price), 2)
-                max_price = round(min_price * 1.09, 2)
+                min_price = round(price * MIN_ROI, 2)
+                max_price = round(price * MAX_ROI, 2)
                 log_to_file(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
                 print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
 
