@@ -592,7 +592,7 @@ def process_row_with_scrapingbee(row, index, brand_to_list):
             log_to_file(f"Error processing row {index}: {e}")
             # If an error occurs, retain default update_info which indicates failure
     else:
-        log_to_file(f"Row {index} brand row {row['Brand']} compared to : Brand not eligible or no valid URL found. Skipping processing.")
+        log_to_file(f"Row {index} (Brand: '{brand}') compared to brands: {', '.join(brands_to_process)} - Not eligible or no valid URL found. Skipping processing.")
 
     return (index, update_info)
 
