@@ -6,7 +6,7 @@ import os
 #1
 #Combine keepa exports and get "need to verify" and Verified
 #OUTPUT: Keepa_Export_Combined.csv
-input_files = ["KeepaExports\Scan1.csv","KeepaExports\Scan2.csv"]
+input_files = ["KeepaExports\Scan1.csv"]
 # Merge each input file and export only the NEW items not in DB
 #OUPUT: Keepa_Combined_Export.csv
 '''
@@ -80,16 +80,21 @@ MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
 #brands_1 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger", "Skechers"]
-brands_2 = ["Laura Mercier", "New Balance", "Kate Spade New York", "Tory Burch", "Carhartt"]
-#brands_3 = ["Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE", "Columbia"] #"Steve Madden"
-#brands_4 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger","Laura Mercier","Speedo", "Steve Madden", "Kate Spade New York", "Tory Burch","Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE"  ]
+#brands_2 = ["Laura Mercier", "New Balance", "Kate Spade New York", "Tory Burch", "Carhartt"]
+#brands_3 = ["Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE", "Columbia", "Lacoste", "Kate spade", "Free People", "Buffalo David Bitton", "Polo Ralph Lauren"] #"Steve Madden"
+brands_4 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger","Laura Mercier","Speedo", "Steve Madden", "Kate Spade New York", "Tory Burch","Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE"  ]
 
+'''
+df = pd.read_csv(MasterV_Brands_To_Update)
+unique_brands = df['Brand'].unique()
+print(unique_brands)
+'''
 # This filters out specific brands so you run keepa with just those
-#mf.keepa_asin_import(brands_2)
+#mf.keepa_asin_import(brands_4)
 
 #**CODE BELOW---------
 
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update, brands_2)
+#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,brands_4 )
 
 #mf.upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
 

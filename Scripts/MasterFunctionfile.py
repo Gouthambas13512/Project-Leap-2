@@ -547,52 +547,51 @@ def process_row_with_scrapingbee(row, index, brand_to_list):
 
     product_url = row['Extraction_Link']
     brand = row['Brand'].strip().lower() if pd.notna(row['Brand']) else ''
-
     brands_to_process = [brand.lower() for brand in brand_to_list]
 
-    if brand in brands_to_process and pd.notna(product_url):
-        log_to_file(f"brand:{brand} asin:{row['ASIN']} passed the test")
-        # Proceed with processing only if brand is in the brand_to_list and URL is not missing
-        try:
-            lowest_price_store, price = find_lowest_price_store_with_scrapfly(product_url)
-            log_to_file(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for asin {row['ASIN']}")
-            print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for asin {row['ASIN']}")
+    # Check if brand is eligible
+    if brand in brands_to_process:
+        # Now check if URL is valid
+        if pd.notna(product_url):
+            log_to_file(f"Brand: {brand} and ASIN: {row['ASIN']} passed the tests")
+            print((f"Brand: {brand} and ASIN: {row['ASIN']} passed the tests"))
+            try:
+                lowest_price_store, price = find_lowest_price_store_with_scrapfly(product_url)
+                log_to_file(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for ASIN {row['ASIN']} for brand (Brand: '{brand}')")
+                print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for ASIN {row['ASIN']}  brand (Brand: '{brand}')")
 
-            if price is not None:
-                # Calculate the Min Price and Max Price based on the retrieved price
-                min_price = round(price * MIN_ROI, 2)
-                max_price = round(price * MAX_ROI, 2)
-                log_to_file(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
-                print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
+                if price is not None:
+                    min_price = round(price * MIN_ROI, 2)
+                    max_price = round(price * MAX_ROI, 2)
+                    log_to_file(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
+                    print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
 
-                # Update the row information with the calculated values
-                update_info.update({
-                    'Store': lowest_price_store,
-                    'Price': price,
-                    'Min Price': min_price,
-                    'Max Price': max_price,
-                })
-
-                calculated_value = calculate_amazon_list_price({**row.to_dict(), **update_info})
-                amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
-                log_to_file(f"Row {index}: Calculated Amazon List Price: ${amazon_list_price}")
-
-                # Update additional fields only if Amazon_List_price is not None
-                if amazon_list_price is not None:
                     update_info.update({
-                        'Amazon_List_price': amazon_list_price,
-                        'Can_List': "Y",  # Update to "Y" since we have valid pricing information
-                        'Curr_Listed?': 1
+                        'Store': lowest_price_store,
+                        'Price': price,
+                        'Min Price': min_price,
+                        'Max Price': max_price,
                     })
-                    log_to_file(f"Row {index}: Updated listing info. Can List: 'Y', Currently Listed: 1")
-                else:
-                    # Retain default values if Amazon_List_price is None
-                    log_to_file(f"Row {index}: No valid Amazon List Price found. Retaining default values.")
-        except Exception as e:
-            log_to_file(f"Error processing row {index}: {e}")
-            # If an error occurs, retain default update_info which indicates failure
+
+                    calculated_value = calculate_amazon_list_price({**row.to_dict(), **update_info})
+                    amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
+                    log_to_file(f"Row {index}: Calculated Amazon List Price: ${amazon_list_price}")
+
+                    if amazon_list_price is not None:
+                        update_info.update({
+                            'Amazon_List_price': amazon_list_price,
+                            'Can_List': "Y",
+                            'Curr_Listed?': 1
+                        })
+                        log_to_file(f"Row {index}: Updated listing info. Can List: 'Y', Currently Listed: 1")
+                    else:
+                        log_to_file(f"Row {index}: No valid Amazon List Price found. Retaining default values.")
+            except Exception as e:
+                log_to_file(f"Error processing row {index}: {e}")
+        else:
+            log_to_file(f"Row {index}: Invalid or missing URL for ASIN {row['ASIN']}")
     else:
-        log_to_file(f"Row {index} (Brand: '{brand}') compared to brands: {', '.join(brands_to_process)} - Not eligible or no valid URL found. Skipping processing.")
+        log_to_file(f"Row {index} (Brand: '{brand}') is not eligible.")
 
     return (index, update_info)
 
@@ -628,6 +627,7 @@ def keepa_asin_import(brands_2):
 
 def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update, brand_to_list):
     Curr_Listed = pd.read_csv(Curr_Listed_path)
+    #Curr_Listed = Curr_Listed.sample(n=100, random_state=42)
     master_db = pd.read_csv(master_db_path)
 
     with ThreadPoolExecutor(max_workers=50) as executor:

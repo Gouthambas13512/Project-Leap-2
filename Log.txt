@@ -23,3 +23,5 @@ April 27,2024: Made 4 brands sheet sheet, MasterV # 19565 for UBI and 2028 for D
 April 28,2024 (sunday): No new export, MasterV # 19565 for UBI and 2028 for DP, All uploaded with new pricing
 April 29,2024: Add all manual scanned to MasterV, MasterV # 23737 for UBI and 2028 for DP, All uploaded with new pricing
 May 1,2024: Make manual scan sheet for 4 brands, MasterV #23737 , Uploaded with new pricing.
+May 2,2024: No new export, MasterV #23737 , Uploaded with new pricing.
+May 3,2024: Make brooks sheet, MasterV #23737 , Uploaded with new pricing.
