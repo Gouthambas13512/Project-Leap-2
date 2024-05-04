@@ -937,7 +937,7 @@ def create_amazon_link(asin):
 import csv
 import os
 
-def combine_csv_files(file1_path, file2_path, file3_path, output_dir="KeepaExports"):
+def combine_csv_files(file1_path, file2_path, output_dir="KeepaExports"):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -955,7 +955,7 @@ def combine_csv_files(file1_path, file2_path, file3_path, output_dir="KeepaExpor
         writer.writerow(first_row)
         
         # Append the remaining rows from all three files
-        for file_path in [file1_path, file2_path, file3_path]:
+        for file_path in [file1_path, file2_path]:
             with open(file_path, 'r', newline='', encoding='utf-8') as infile:
                 next(infile)  # Skip the first row
                 reader = csv.reader(infile)

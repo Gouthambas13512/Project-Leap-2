@@ -21,7 +21,7 @@ for file in input_files:
 #IF RUNNING THIS, SKIP 2
 #Input: Keepa_Combined_Export.csv NEW items which have Black_list and PID column with filled data
 #Output: Is the Output_File ready to go directly into MasterDB and MasterV
-Prepare_Import_File = "KeepaExports\Keepa_Combined_Export.csv"
+Prepare_Import_File = "KeepaExports\Keepa_Combined_Export[2].csv"
 Output_File = "KeepaExports/prepared_output.csv"
 #mf.prepare_manual_only_import(Prepare_Import_File, Output_File)
 
@@ -61,7 +61,7 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 
 
 # Combine the CSV outputs from keep into one file
-#mf.combine_csv_files(r"KeepaExports\file1_export.csv", r"KeepaExports\file2_export.csv", r"KeepaExports\file3_export.csv")
+#mf.combine_csv_files(r"KeepaExports\Scan1.csv", r"KeepaExports\Scan2.csv")
 
 
 #5
@@ -79,10 +79,10 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
-#brands_1 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger", "Skechers"]
-#brands_2 = ["Laura Mercier", "New Balance", "Kate Spade New York", "Tory Burch", "Carhartt"]
+brands_1 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger", "Skechers","Brooks"]
+#brands_2 = ["Laura Mercier", "New Balance", "Kate Spade New York", "Tory Burch","Steve Madden"]
 #brands_3 = ["Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE", "Columbia", "Lacoste", "Kate spade", "Free People", "Buffalo David Bitton", "Polo Ralph Lauren"] #"Steve Madden"
-brands_4 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger","Laura Mercier","Speedo", "Steve Madden", "Kate Spade New York", "Tory Burch","Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE"  ]
+#brands_4 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger","Laura Mercier","Speedo", "Steve Madden", "Kate Spade New York", "Tory Burch","Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE"  ]
 
 '''
 df = pd.read_csv(MasterV_Brands_To_Update)
@@ -90,11 +90,11 @@ unique_brands = df['Brand'].unique()
 print(unique_brands)
 '''
 # This filters out specific brands so you run keepa with just those
-#mf.keepa_asin_import(brands_4)
+#mf.keepa_asin_import(brands_1)
 
 #**CODE BELOW---------
 
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,brands_4 )
+#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,brands_1 )
 
 #mf.upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
 
