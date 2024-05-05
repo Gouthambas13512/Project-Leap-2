@@ -69,7 +69,7 @@ def find_lowest_price_store_with_scrapfly(product_url):
 
                         if is_preferred_store(quality_tag, store_name, additional_stores):
                             if lowest_price is None or total_price < lowest_price:
-                                lowest_price = total_price
+                                lowest_price = lowest_price = round(total_price, 2)
                                 lowest_price_store = store_name
                 except Exception as inner_exc:
                     error_counter += 1
@@ -201,43 +201,100 @@ def calculate_shipping_cost(shipping_text):
     else:
         return 0
     
+def update_amazon_listing_price(input_file_path, output_file_path):
+    # Load the DataFrame from the saved CSV
+    df = pd.read_csv(input_file_path)
+
+    # Iterate over each row in DataFrame
+    for index, row in df.iterrows():
+        if pd.notna(row['Min Price']):  # Check if 'Min Price' has a value
+            amazon_list_price = calculate_amazon_list_price(row)
+            if amazon_list_price is not None:
+                # Update values if amazon_list_price is calculated
+                df.at[index, 'Amazon_List_price'] = amazon_list_price
+                df.at[index, 'Can_List'] = 'Y'
+                df.at[index, 'Curr_Listed?'] = 1
+            else:
+                # Ensure that Amazon_List_price is explicitly set to None if not calculated
+                df.at[index, 'Amazon_List_price'] = None
+
+    # Save the updated DataFrame to CSV
+    df.to_csv(output_file_path, index=False)
+    print("Updated DataFrame saved")
+
 def calculate_amazon_list_price(row):
-    # Condition for Lowest FBM Seller matching specific ID
-    if row['Lowest FBM Seller'] == 'ANZYNJW9IIF9C':
-        # Check if New: Current is greater than Min Price
-        if row['New: Current'] > row['Min Price']:
-            return row['New: Current']
-        else:
+    # Convert to float and handle None
+    def to_float(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
             return None
 
+    buy_box_current = to_float(row.get('Buy Box: Current'))
+    new_current = to_float(row.get('New: Current'))
+    new_highest = to_float(row.get('New: Highest'))
+    min_price = to_float(row.get('Min Price'))
+    max_price = to_float(row.get('Max Price'))
+
+    # Check for Lowest FBM Seller with specific ID
+    #if row.get('Lowest FBM Seller') == 'ANZYNJW9IIF9C':
+        #if new_current and new_current > min_price:
+            #return new_current
+
     # Check Buy Box: Current if it's available and meets the minimum price requirement
-    if pd.notna(row['Buy Box: Current']) and row['Buy Box: Current'] > row['Min Price']:
-        return row['Buy Box: Current'] - 1
+    if buy_box_current and min_price and buy_box_current > min_price:
+        return buy_box_current - 1
 
     # If Buy Box is not available, check New: Current if it's available and meets the minimum price requirement
-    elif pd.notna(row['New: Current']) and row['New: Current'] > row['Min Price']:
-        return row['New: Current'] - 1
+    if new_current and min_price and new_current > min_price:
+        return new_current - 1
 
     # If either number is available and not greater than Min Price then return none
-    elif (pd.notna(row['Buy Box: Current']) or pd.notna(row['New: Current'])) and \
-       ((pd.notna(row['Buy Box: Current']) and row['Buy Box: Current'] < row['Min Price']) or 
-        (pd.notna(row['New: Current']) and row['New: Current'] < row['Min Price'])):
-        return None
+    if (buy_box_current is not None or new_current is not None):
+        if (buy_box_current is not None and buy_box_current < min_price) or \
+           (new_current is not None and new_current < min_price):
+            return None
 
     # If neither is available, check if Max Price < New: Highest
-    elif pd.notna(row['New: Highest']):
-        if row['Max Price'] < row['New: Highest']:
-            return row['New: Highest']
-        # Removed incorrect condition and added correct logic to not return New: Highest when below Min Price
-        elif row['New: Highest'] < row['Min Price']:
-            return None  # This condition ensures that New: Highest is not returned if it's below Min Price
-        # Correct handling if New: Highest is between Min Price and Max Price
-        elif row['Min Price'] < row['New: Highest'] < row['Max Price']:
-            return row['New: Highest']
-
+    if new_highest:
+        if max_price < new_highest:
+            return new_highest
+        elif new_highest < min_price:
+            return None
+        elif min_price < new_highest < max_price:
+            return new_highest
 
     # If there is no New: Highest price then return Max Price
-    return row['Max Price']
+    return max_price if max_price else None
+
+def update_amazon_listing_price(input_file_path, output_file_path):
+    # Load the DataFrame from the saved CSV
+    df = pd.read_csv(input_file_path)
+
+    # Iterate over each row in DataFrame
+    for index, row in df.iterrows():
+        if pd.notna(row['Min Price']):  # Check if 'Min Price' has a value
+            # Attempt to calculate the Amazon list price
+            amazon_list_price = calculate_amazon_list_price(row)
+            if amazon_list_price is not None:
+                # Update values if amazon_list_price is calculated
+                df.at[index, 'Amazon_List_price'] = amazon_list_price
+                df.at[index, 'Can_List'] = 'Y'
+                df.at[index, 'Curr_Listed?'] = 1
+            else:
+                # Set values to reflect that a valid Amazon list price wasn't calculated
+                df.at[index, 'Amazon_List_price'] = None
+                df.at[index, 'Can_List'] = 'N'
+                df.at[index, 'Curr_Listed?'] = 0
+        else:
+            # Set values for rows where 'Min Price' is not available
+            df.at[index, 'Amazon_List_price'] = None
+            df.at[index, 'Can_List'] = 'N'
+            df.at[index, 'Curr_Listed?'] = 0
+
+    # Save the updated DataFrame to CSV
+    df.to_csv(output_file_path, index=False)
+    print("Updated DataFrame saved")
 
 def Update_Can_List(row):
     import pandas as pd  # Ensure pandas is imported
@@ -532,7 +589,8 @@ update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.
 def process_row_with_scrapingbee(row, index, brand_to_list):
     MIN_ROI = 1.7
     MAX_ROI = 1.87
-    print(f"Starting processing of row {index}")
+    print(f"Starting processing of row {index} with asin {row['ASIN']}")
+    log_to_file(f"Starting processing of row {index}")
 
     # Initialize default values for the updates
     update_info = {
@@ -551,27 +609,24 @@ def process_row_with_scrapingbee(row, index, brand_to_list):
 
     # Check if brand is eligible
     if brand in brands_to_process:
+        log_to_file(f"Brand '{brand}' is eligible for processing.")
         # Now check if URL is valid
         if pd.notna(product_url):
             log_to_file(f"Brand: {brand} and ASIN: {row['ASIN']} passed the tests")
-            print((f"Brand: {brand} and ASIN: {row['ASIN']} passed the tests"))
+            print(f"Brand: {brand} and ASIN: {row['ASIN']} passed the tests")
             try:
                 lowest_price_store, price = find_lowest_price_store_with_scrapfly(product_url)
-                log_to_file(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for ASIN {row['ASIN']} for brand (Brand: '{brand}')")
-                print(f"Row {index}: Retrieved lowest price ${price} from store {lowest_price_store} for ASIN {row['ASIN']}  brand (Brand: '{brand}')")
-
                 if price is not None:
                     min_price = round(price * MIN_ROI, 2)
                     max_price = round(price * MAX_ROI, 2)
-                    log_to_file(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
-                    print(f"Row {index}: Calculated Min Price: ${min_price}, Max Price: ${max_price}")
-
                     update_info.update({
                         'Store': lowest_price_store,
                         'Price': price,
                         'Min Price': min_price,
                         'Max Price': max_price,
                     })
+
+                    log_to_file(f"Row {index}: {row['ASIN']} Retrieved lowest price ${price} from store {lowest_price_store}. Calculated Min Price: ${min_price}, Max Price: ${max_price}")
 
                     calculated_value = calculate_amazon_list_price({**row.to_dict(), **update_info})
                     amazon_list_price = round(calculated_value, 2) if calculated_value is not None else None
@@ -583,16 +638,16 @@ def process_row_with_scrapingbee(row, index, brand_to_list):
                             'Can_List': "Y",
                             'Curr_Listed?': 1
                         })
-                        log_to_file(f"Row {index}: Updated listing info. Can List: 'Y', Currently Listed: 1")
                     else:
-                        log_to_file(f"Row {index}: No valid Amazon List Price found. Retaining default values.")
+                        log_to_file(f"ASIN {row['ASIN']}: No valid Amazon List Price found. Retaining default values.")
+                else:
+                    log_to_file(f"Row {index} {row['ASIN']}: No price found from scraping.")
             except Exception as e:
                 log_to_file(f"Error processing row {index}: {e}")
         else:
             log_to_file(f"Row {index}: Invalid or missing URL for ASIN {row['ASIN']}")
     else:
-        log_to_file(f"Row {index} (Brand: '{brand}') is not eligible.")
-
+        log_to_file(f"Row {index} (Brand: '{brand}') is not eligible for processing.")
     return (index, update_info)
 
 def get_price_multiplier(price):
@@ -625,29 +680,35 @@ def keepa_asin_import(brands_2):
     # Writing the filtered DataFrame to a new CSV file, keeping the header
     filtered_df.to_csv('KeepaExports/Keepa_asin_import.csv', index=False)
 
+
 def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Price_Update, brand_to_list):
     Curr_Listed = pd.read_csv(Curr_Listed_path)
-    #Curr_Listed = Curr_Listed.sample(n=100, random_state=42)
-    master_db = pd.read_csv(master_db_path)
+    master_db = pd.read_csv(master_db_path)  # Note: This is loaded but not used in this snippet.
+
+    # Temporary storage for results that need additional processing
+    update_list = []
 
     with ThreadPoolExecutor(max_workers=50) as executor:
-        # Submit tasks for each row, passing brand_to_list to the processing function
+        # Submit tasks for each row
         futures = [executor.submit(process_row_with_scrapingbee, row, index, brand_to_list) for index, row in Curr_Listed.iterrows()]
 
-        # Process results as they complete
+        # Collect all results before updating DataFrame
         for future in as_completed(futures):
-            index, update_info = future.result()
-            # Update the Curr_Listed DataFrame with the results
-            for key, value in update_info.items():
+            index, scrape_info = future.result()
+            update_list.append((index, scrape_info))
+    
+    # Update DataFrame with scraped pricing info
+    for index, scrape_info in update_list:
+        for key, value in scrape_info.items():
+            if key in ['Store', 'Price', 'Min Price', 'Max Price']:
                 Curr_Listed.at[index, key] = value
 
-    # After processing, save the updated DataFrames
+    # Save the DataFrame with updated scrape data
     Curr_Listed.to_csv(Output_File_Price_Update, index=False)
     upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
     update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.csv')
-    
-    print("Done")
-    # Handle master_db updates outside of the concurrent processing block to ensure thread safety
+    print("Scrape complete and data saved")
+
 
 def count_rows(csv_file):
     try:
@@ -1002,3 +1063,59 @@ def update_master_v(keepa_file, master_file):
         writer.writerows(updated_rows)
     print("Done")
 
+import pandas as pd
+
+import pandas as pd
+
+import pandas as pd
+
+import pandas as pd
+
+import pandas as pd
+
+def update_master_v_UPC(master_file_path, update_file_path, output_file_path):
+    """
+    Updates EAN, UPC codes, Custom_SKU, and Extraction_Link in the master file based on an update file.
+    
+    Args:
+    master_file_path (str): Path to the master CSV file.
+    update_file_path (str): Path to the CSV file containing updates.
+    output_file_path (str): Path to save the updated master CSV file.
+    """
+    # Load the data, ensuring all data is treated as string where necessary
+    master_v = pd.read_csv(master_file_path, dtype={'Extraction_Link': str, 'Product Codes: UPC': str})
+    master_v_upc_update = pd.read_csv(update_file_path, dtype={'Product Codes: UPC': str})
+    
+    # Loop through each row in the update DataFrame
+    for index, update_row in master_v_upc_update.iterrows():
+        try:
+            # Find matching ASIN in MasterV
+            mask = master_v['ASIN'] == update_row['ASIN']
+            
+            # Check if there are any matches before updating
+            if mask.any():
+                # Update the EAN and UPC codes
+                master_v.loc[mask, 'Product Codes: EAN'] = update_row['Product Codes: EAN']
+                master_v.loc[mask, 'Product Codes: UPC'] = update_row['Product Codes: UPC']
+                
+                # Update the Custom_SKU column
+                master_v.loc[mask, 'Custom_SKU'] = "GB" + str(update_row['Product Codes: UPC'])
+                
+                # Update the Extraction_Link column
+                for idx in master_v[mask].index:
+                    if pd.notnull(master_v.at[idx, 'Extraction_Link']):
+                        link_parts = master_v.at[idx, 'Extraction_Link'].split('cid:')
+                        if len(link_parts) > 1:
+                            pid = link_parts[1].split(',')[0]
+                            upc = master_v.at[idx, 'Product Codes: UPC']
+                            new_link = f'https://www.google.com/shopping/product/{pid}/offers?q={upc}&prds=cid:{pid},cond:1'
+                            master_v.at[idx, 'Extraction_Link'] = new_link
+                        else:
+                            print(f"Error in row {idx}: Unexpected link format")
+        except Exception as e:
+            print(f"Error in row {index}: {str(e)}")
+            continue  # Skip to the next row
+
+    # Save the updated DataFrame back to CSV
+    master_v.to_csv(output_file_path, index=False)
+    print(f"Update complete! The file {output_file_path} has been saved.")
