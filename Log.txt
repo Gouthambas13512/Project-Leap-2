@@ -25,3 +25,6 @@ April 29,2024: Add all manual scanned to MasterV, MasterV # 23737 for UBI and 20
 May 1,2024: Make manual scan sheet for 4 brands, MasterV #23737 , Uploaded with new pricing.
 May 2,2024: No new export, MasterV #23737 , Uploaded with new pricing.
 May 3,2024: Make brooks sheet, MasterV #23737 , Uploaded with new pricing.
+May 4,2024: No new export, MasterV #23737 , Uploaded with new pricing.
+May 5,2024: No new export, MasterV #30075 , Uploaded with new pricing.
+May 6,2024: No new export, MasterV #30075, Uploaded with new pricing.
