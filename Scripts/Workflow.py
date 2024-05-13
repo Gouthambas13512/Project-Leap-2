@@ -6,7 +6,7 @@ import os
 #1
 #Combine keepa exports and get "need to verify" and Verified
 #OUTPUT: Keepa_Export_Combined.csv
-input_files = ["KeepaExports\file1.csv","KeepaExports\file2.csv"]
+input_files = [r"KeepaExports\file1.csv",r"KeepaExports\file2.csv"]
 # Merge each input file and export only the NEW items not in DB
 #OUPUT: Keepa_Combined_Export.csv
 '''
@@ -21,7 +21,7 @@ for file in input_files:
 #IF RUNNING THIS, SKIP 2
 #Input: Keepa_Combined_Export.csv NEW items which have Black_list and PID column with filled data
 #Output: Is the Output_File ready to go directly into MasterDB and MasterV
-Prepare_Import_File = "KeepaExports\Keepa_Combined_Export[2].csv"
+Prepare_Import_File = "KeepaExports\Keepa_Combined_Export.csv"
 Output_File = "KeepaExports/prepared_output.csv"
 #mf.prepare_manual_only_import(Prepare_Import_File, Output_File)
 
@@ -57,20 +57,6 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 #**CODE BELOW---------
 #mf.Update_DB_After_ManualV(input_file, master_db_file, master_v_file, Black_Listed_Y)
 
-  
-
-
-# Combine the CSV outputs from keep into one file
-#mf.combine_csv_files(r"KeepaExports\Scan1.csv", r"KeepaExports\Scan2.csv")
-
-
-#5
-#This takes Keepa_update which is all the verified Listings and updates the masterV with current Buybox:current, current, and store 
-#Need to pull the updated data from Keepa. In this section you can neglect certain brands
-#OUTPUT this will update MasterV
-#CODE BELOW
-#mf.update_master_v('KeepaExports\Keepa_Update.csv', 'DataBaseFiles\MasterV.csv')
-
 
 #6
 #Tells us if we can list a product. Updates (Amazon_List_price)
@@ -80,28 +66,45 @@ MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
 #brands_1 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger", "Skechers","Brooks"]
-brands_2 = ["Laura Mercier", "New Balance", "Kate Spade New York", "Tory Burch","Steve Madden"]
-#brands_3 = ["Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE", "Columbia", "Lacoste", "Kate spade", "Free People", "Buffalo David Bitton", "Polo Ralph Lauren"] #"Steve Madden"
-#brands_4 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger","Laura Mercier","Speedo", "Steve Madden", "Kate Spade New York", "Tory Burch","Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE"  ]
+#brands_2 = ["Laura Mercier", "New Balance", "Kate Spade New York", "Tory Burch","Steve Madden","LifeStride"]
+brands_3 = ["Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE", "Columbia", "Lacoste", "Kate spade", "Free People", "Buffalo David Bitton", "Polo Ralph Lauren"] #"Steve Madden"
+#brands_4 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger","Laura Mercier","Speedo", "Steve Madden", "Kate Spade New York", "Tory Burch","Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE","LifeStride"]
 #brands_5 = ["Steve Madden", "New Balance"]
-#brands_6 = ["Birkenstock"]
-brands_7 = ["Tommy Hilfiger" , "Polo Ralph Lauren", "Free People" , "Lacoste"]
+brands_6 = ["THE NORTH FACE"]
+#brands_7 = ["Tommy Hilfiger" , "Polo Ralph Lauren", "Free People" , "Lacoste"]
 '''
 df = pd.read_csv(MasterV_Brands_To_Update)
 unique_brands = df['Brand'].unique()
 print(unique_brands)
 '''
-# This filters out specific brands so you run keepa with just those
-mf.keepa_asin_import(brands_7)
+filename = 'DataBaseFiles\MasterV.csv'
+columns_to_clean = ['Price', 'Min Price', 'Max Price', 'Amazon_List_price']
 
 #**CODE BELOW---------
 
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,brands_2 )
+# This filters out specific brands so you run keepa with just those
+#mf.keepa_asin_import(brands_3)
+
+# Combine the CSV outputs from keepa into one file
+#mf.combine_csv_files(r"KeepaExports\Scan1.csv", r"KeepaExports\Scan2.csv")
+
+#This takes Keepa_update and updates the masterV with current Buybox:current, current, and store 
+#mf.update_master_v('KeepaExports\Keepa_Update.csv', 'DataBaseFiles\MasterV.csv')
+
+#This will remove Pricing of the brands listed last time
+#mf.remove_numeric_values(filename, columns_to_clean)
+
+#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,brands_3)
+
 #mf.update_amazon_listing_price('DataBaseFiles/MasterV.csv', 'DataBaseFiles/MasterV.csv')
+
 #mf.upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
 
-#mf.update_master_v_UPC(r'DataBaseFiles\MasterV.csv', r"KeepaExports\Update_UPC_2.csv", r'DataBaseFiles\MasterV.csv')
+#It corrects UPC problem
+#mf.update_master_v_UPC(r'DataBaseFiles\MasterV.csv', r"KeepaExports\Update_UPC_5.csv", r'DataBaseFiles\MasterV.csv')
 
+#use below to create excel sheet
+#mf.update_excel_from_csv('DataBaseFiles/MasterV.csv', 'Amazon_Upload_xlsx\Ever_Upload.xlsx')
 
 
 

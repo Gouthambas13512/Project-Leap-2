@@ -1119,3 +1119,75 @@ def update_master_v_UPC(master_file_path, update_file_path, output_file_path):
     # Save the updated DataFrame back to CSV
     master_v.to_csv(output_file_path, index=False)
     print(f"Update complete! The file {output_file_path} has been saved.")
+
+import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.cell.cell import MergedCell  # Import to handle MergedCell objects
+
+def update_excel_from_csv(master_csv_path, excel_path):
+    # Load data from CSV with low_memory set to False to avoid DtypeWarnings
+    master_data = pd.read_csv(master_csv_path, low_memory=False)
+    print("CSV loaded successfully. Number of rows read:", len(master_data))
+
+    # Load the Excel workbook and specify which sheet to use
+    wb = load_workbook(excel_path)
+    ws = wb.active
+    print("Excel workbook loaded successfully.")
+
+    # Handle headers on the third row, not the second
+    header_row = ws[3]
+    column_mapping = {
+        'Product Codes: UPC': 'External Product ID',
+        'Custom_SKU': 'Contribution SKU',
+        'ASIN': 'Merchant Suggested ASIN',
+        'Amazon_List_price': 'Your Price USD (US)',
+        'Curr_Listed?': 'Quantity (US)'
+    }
+
+    # Creating a dictionary from header cells, handling merged cells
+    header_dict = {}
+    for cell in header_row:
+        print(f"Reading header: {cell.value} at {cell.coordinate}")
+        if cell.value is not None:
+            if isinstance(cell, MergedCell):  # If the cell is a merged cell
+                actual_cell = ws[cell.coordinate]
+                header_dict[cell.value] = actual_cell.column_letter
+            else:
+                header_dict[cell.value] = cell.column_letter
+
+    print("Header mapping:", header_dict)
+
+    # Clear existing data from relevant columns in Excel starting from the fourth row
+    for header in column_mapping.values():
+        if header in header_dict:
+            col_letter = header_dict[header]
+            for row in range(6, ws.max_row + 1):
+                ws[f'{col_letter}{row}'].value = None
+
+    # Fill new data
+    for index, row in master_data.iterrows():
+        for master_col, excel_col in column_mapping.items():
+            if excel_col in header_dict:
+                col_letter = header_dict[excel_col]
+                # Copy data to the correct column in Excel, starting from the fourth row
+                ws[f'{col_letter}{index + 6}'].value = row[master_col]
+
+    # Save the workbook
+    wb.save(excel_path)
+    print("Excel file has been updated and saved successfully!")
+
+
+
+def remove_numeric_values(filename, columns):
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(filename)
+    
+    # Remove numeric values from specified columns
+    for column in columns:
+        df[column] = df[column].apply(lambda x: '' if str(x).replace('.', '').isdigit() else x)
+    
+    # Save the modified DataFrame back to a CSV file
+    df.to_csv(filename, index=False)
+
+
+
