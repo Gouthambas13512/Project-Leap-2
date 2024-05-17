@@ -213,7 +213,7 @@ def update_amazon_listing_price(input_file_path, output_file_path):
                 # Update values if amazon_list_price is calculated
                 df.at[index, 'Amazon_List_price'] = amazon_list_price
                 df.at[index, 'Can_List'] = 'Y'
-                df.at[index, 'Curr_Listed?'] = 1
+                df.at[index, 'Curr_Listed?'] = 2
             else:
                 # Ensure that Amazon_List_price is explicitly set to None if not calculated
                 df.at[index, 'Amazon_List_price'] = None
@@ -243,11 +243,11 @@ def calculate_amazon_list_price(row):
 
     # Check Buy Box: Current if it's available and meets the minimum price requirement
     if buy_box_current and min_price and buy_box_current > min_price:
-        return buy_box_current - 1
+        return buy_box_current - 0.10
 
     # If Buy Box is not available, check New: Current if it's available and meets the minimum price requirement
     if new_current and min_price and new_current > min_price:
-        return new_current - 1
+        return new_current - 0.10
 
     # If either number is available and not greater than Min Price then return none
     if (buy_box_current is not None or new_current is not None):
@@ -280,7 +280,7 @@ def update_amazon_listing_price(input_file_path, output_file_path):
                 # Update values if amazon_list_price is calculated
                 df.at[index, 'Amazon_List_price'] = amazon_list_price
                 df.at[index, 'Can_List'] = 'Y'
-                df.at[index, 'Curr_Listed?'] = 1
+                df.at[index, 'Curr_Listed?'] = 2
             else:
                 # Set values to reflect that a valid Amazon list price wasn't calculated
                 df.at[index, 'Amazon_List_price'] = None
@@ -544,7 +544,7 @@ def update_listing_stats(master_csv_path, results_csv_path):
     brand_counts_all = df.groupby('Brand').size()
 
     # Filter the DataFrame where 'Curr_Listed?' equals 1
-    filtered_df = df[df['Curr_Listed?'] == 1]
+    filtered_df = df[df['Curr_Listed?'] == 2]
 
     # Group by the "Brand" column in the filtered DataFrame and count the number of rows for each brand
     brand_counts_curr_listed = filtered_df.groupby('Brand').size()
@@ -636,7 +636,7 @@ def process_row_with_scrapingbee(row, index, brand_to_list):
                         update_info.update({
                             'Amazon_List_price': amazon_list_price,
                             'Can_List': "Y",
-                            'Curr_Listed?': 1
+                            'Curr_Listed?': 2
                         })
                     else:
                         log_to_file(f"ASIN {row['ASIN']}: No valid Amazon List Price found. Retaining default values.")
@@ -1190,4 +1190,64 @@ def remove_numeric_values(filename, columns):
     df.to_csv(filename, index=False)
 
 
+def combine_and_filter_exports(input_files, master_file_path, blacklist_file_path, output_file):
+    # Initialize a DataFrame to hold all combined data
+    all_data = pd.DataFrame()
+    
+    # Attempt to read and combine all input files
+    total_initial_rows = 0
+    for file_path in input_files:
+        try:
+            if os.path.exists(file_path):
+                data = pd.read_csv(file_path)
+                all_data = pd.concat([all_data, data], ignore_index=True)
+                total_initial_rows += len(data)
+            else:
+                print(f"File '{file_path}' not found.")
+        except Exception as e:
+            print(f"Failed to read {file_path}: {e}")
 
+    # Drop duplicates based on 'ASIN'
+    all_data.drop_duplicates(subset='ASIN', inplace=True)
+    
+    try:
+        # Load the master file
+        if os.path.exists(master_file_path):
+            master_data = pd.read_csv(master_file_path)
+        else:
+            print(f"Master file '{master_file_path}' not found.")
+            master_data = pd.DataFrame()
+
+        # Load the blacklist file
+        if os.path.exists(blacklist_file_path):
+            blacklist_data = pd.read_csv(blacklist_file_path)
+        else:
+            print(f"Blacklist file '{blacklist_file_path}' not found.")
+            blacklist_data = pd.DataFrame()
+
+    except Exception as e:
+        print(f"Failed to load verification or blacklist data: {e}")
+        return
+
+    # Filter out ASINs that are in the master list or the blacklist
+    filtered_data = all_data[
+        ~all_data['ASIN'].isin(master_data.get('ASIN', [])) &
+        ~all_data['ASIN'].isin(blacklist_data.get('ASIN', []))
+    ]
+
+    # Filter to include only ASINs that appear in all input files
+    asin_counts = all_data['ASIN'].value_counts()
+    asins_in_all_files = asin_counts[asin_counts == len(input_files)].index
+    final_data = filtered_data[filtered_data['ASIN'].isin(asins_in_all_files)]
+
+    # Output how many rows were in the input and how many are in the final output
+    final_row_count = len(final_data)
+    print(f"Total rows checked from input files: {total_initial_rows}")
+    print(f"Rows in the final output: {final_row_count}")
+
+    # Write the filtered data to the output file
+    try:
+        final_data.to_csv(output_file, index=False)
+        print(f"Data exported successfully to {output_file}")
+    except Exception as e:
+        print(f"Failed to write to {output_file}: {e}")

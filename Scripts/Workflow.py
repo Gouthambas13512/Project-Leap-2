@@ -9,13 +9,9 @@ import os
 input_files = [r"KeepaExports\file1.csv",r"KeepaExports\file2.csv"]
 # Merge each input file and export only the NEW items not in DB
 #OUPUT: Keepa_Combined_Export.csv
-'''
-for file in input_files:
-    if os.path.exists(file):
-        mf.merge_csv(file)
-    else:
-        print(f"File '{file}' not found.")
-'''
+
+#mf.combine_and_filter_exports(input_files=input_files, master_file_path="DataBaseFiles/Master_DB.csv",blacklist_file_path="DataBaseFiles/Black_Listed_Y.csv",output_file="Keepa_Combined_Export.csv")
+
 
 #1.5
 #IF RUNNING THIS, SKIP 2
@@ -65,13 +61,9 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
-brands_1 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger", "Skechers","Brooks"]
-#brands_2 = ["Laura Mercier", "New Balance", "Kate Spade New York", "Tory Burch","Steve Madden","LifeStride"]
-#brands_3 = ["Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE", "Columbia", "Lacoste", "Kate spade", "Free People", "Buffalo David Bitton", "Polo Ralph Lauren"] #"Steve Madden"
-#brands_4 = ["Birkenstock", "Cole Haan", "Champion", "TYR", "Tommy Hilfiger","Laura Mercier","Speedo", "Steve Madden", "Kate Spade", "Tory Burch","Kate Spade New York", "Tory Burch","Tommy Hilfiger","NIKE","LifeStride"]
-#brands_5 = ["Steve Madden", "New Balance"]
-brands_6 = ["THE NORTH FACE"]
-#brands_7 = ["Tommy Hilfiger" , "Polo Ralph Lauren", "Free People" , "Lacoste"]
+#Brands1 = ['New Balance',' Tory Burch', 'LifeStride',' Nike', 'Champion','TYR']
+Brands2 = ['Birkenstock', 'Steve Madden', 'Free People', 'Columbia', 'Polo Ralph Lauren','POLO RALPH LAUREN' 'Skechers', 'Cole Haan']
+#Brands3 =['Lacoste', 'Laura Mercier', 'Kate Spade New York', 'Cole Haan', 'Buffalo David Bitton', 'Kate Spade','TOMMY HILFIGER','Tommy Hilfiger']
 '''
 df = pd.read_csv(MasterV_Brands_To_Update)
 unique_brands = df['Brand'].unique()
@@ -83,7 +75,7 @@ columns_to_clean = ['Price', 'Min Price', 'Max Price', 'Amazon_List_price']
 #**CODE BELOW---------
 
 # This filters out specific brands so you run keepa with just those
-#mf.keepa_asin_import(brands_1)
+#mf.keepa_asin_import(Brands2)
 
 # Combine the CSV outputs from keepa into one file
 #mf.combine_csv_files(r"KeepaExports\Scan1.csv", r"KeepaExports\Scan2.csv")
@@ -94,7 +86,7 @@ columns_to_clean = ['Price', 'Min Price', 'Max Price', 'Amazon_List_price']
 #This will remove Pricing of the brands listed last time
 #mf.remove_numeric_values(filename, columns_to_clean)
 
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,brands_1)
+#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,Brands2)
 
 #mf.update_amazon_listing_price('DataBaseFiles/MasterV.csv', 'DataBaseFiles/MasterV.csv')
 
@@ -104,7 +96,7 @@ columns_to_clean = ['Price', 'Min Price', 'Max Price', 'Amazon_List_price']
 #mf.update_master_v_UPC(r'DataBaseFiles\MasterV.csv', r"KeepaExports\Update_UPC_1.csv", r'DataBaseFiles\MasterV.csv')
 
 #use below to create excel sheet
-mf.update_excel_from_csv('DataBaseFiles/MasterV.csv', 'Amazon_Upload_xlsx\Ever_Upload.xlsx')
+#mf.update_excel_from_csv('DataBaseFiles/MasterV.csv', 'Amazon_Upload_xlsx\Ever_Upload.xlsx')
 
 
 
