@@ -61,9 +61,9 @@ Black_Listed_Y = 'DataBaseFiles/Black_Listed_Y.csv'  # These are blacklisted Y
 MasterV_Brands_To_Update = 'DataBaseFiles\MasterV.csv'
 master_db = 'DataBaseFiles/Master_DB.csv'
 Output_File_Price_Update = 'DataBaseFiles\MasterV.csv'
-Brands1 = ['New Balance',' Tory Burch', 'LifeStride',' Nike', 'Champion','TYR']
+#Brands1 = ['New Balance',' Tory Burch', 'LifeStride',' Nike', 'Champion','TYR']
 #Brands2 = ['Birkenstock', 'Steve Madden', 'Free People', 'Columbia', 'Polo Ralph Lauren','POLO RALPH LAUREN' 'Skechers', 'Cole Haan']
-#Brands3 =['Lacoste', 'Laura Mercier', 'Kate Spade New York', 'Cole Haan', 'Buffalo David Bitton', 'Kate Spade','TOMMY HILFIGER','Tommy Hilfiger']
+Brands3 =['Lacoste', 'Laura Mercier', 'Kate Spade New York', 'Cole Haan', 'Buffalo David Bitton', 'Kate Spade','TOMMY HILFIGER','Tommy Hilfiger']
 '''
 df = pd.read_csv(MasterV_Brands_To_Update)
 unique_brands = df['Brand'].unique()
@@ -75,7 +75,7 @@ columns_to_clean = ['Price', 'Min Price', 'Max Price', 'Amazon_List_price']
 #**CODE BELOW---------
 
 # This filters out specific brands so you run keepa with just those
-#mf.keepa_asin_import(Brands1)
+#mf.keepa_asin_import(Brands3)
 
 # Combine the CSV outputs from keepa into one file
 #mf.combine_csv_files(r"KeepaExports\Scan1.csv", r"KeepaExports\Scan2.csv")
@@ -86,7 +86,7 @@ columns_to_clean = ['Price', 'Min Price', 'Max Price', 'Amazon_List_price']
 #This will remove Pricing of the brands listed last time
 #mf.remove_numeric_values(filename, columns_to_clean)
 
-#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,Brands1)
+#mf.update_pricing_concurrently(MasterV_Brands_To_Update, master_db, Output_File_Price_Update,Brands3)
 
 #mf.update_amazon_listing_price('DataBaseFiles/MasterV.csv', 'DataBaseFiles/MasterV.csv')
 

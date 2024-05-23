@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -243,11 +244,11 @@ def calculate_amazon_list_price(row):
 
     # Check Buy Box: Current if it's available and meets the minimum price requirement
     if buy_box_current and min_price and buy_box_current > min_price:
-        return buy_box_current - 0.10
+        return buy_box_current - 0.80
 
     # If Buy Box is not available, check New: Current if it's available and meets the minimum price requirement
     if new_current and min_price and new_current > min_price:
-        return new_current - 0.10
+        return new_current - 0.80
 
     # If either number is available and not greater than Min Price then return none
     if (buy_box_current is not None or new_current is not None):
@@ -705,7 +706,7 @@ def update_pricing_concurrently(Curr_Listed_path, master_db_path, Output_File_Pr
 
     # Save the DataFrame with updated scrape data
     Curr_Listed.to_csv(Output_File_Price_Update, index=False)
-    upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
+    #upload_file(r"C:\Users\Administrator\Documents\RA\DataBaseFiles\MasterV.csv")
     update_listing_stats('DataBaseFiles/MasterV.csv', 'Results/Daily_listings_stats.csv')
     print("Scrape complete and data saved")
 
@@ -1032,14 +1033,18 @@ def update_master_v(keepa_file, master_file):
         reader = csv.DictReader(file)
         for row in reader:
             asin = row['ASIN']
-            # Store and clean Buy Box: Current, New: Current values for each ASIN, and store Lowest FBM Seller as is
+            # Store and clean Buy Box: Current, New: Current, and New: Highest values for each ASIN
             keepa_data[asin] = {
                 'Buy Box: Current': clean_and_convert_price(row['Buy Box: Current']),
                 'New: Current': clean_and_convert_price(row['New: Current']),
                 'New: Highest': clean_and_convert_price(row['New: Highest']),
                 'Lowest FBM Seller': row.get('Lowest FBM Seller')  # No cleaning needed
             }
-    
+
+    # Save keepa_data to a JSON file for inspection
+    with open('keepa_data.json', 'w', encoding='utf-8') as json_file:
+        json.dump(keepa_data, json_file, indent=4)
+
     # Step 2: Read MasterV and Prepare Updated Data
     updated_rows = []
     with open(master_file, mode='r', encoding='utf-8') as file:
@@ -1048,19 +1053,19 @@ def update_master_v(keepa_file, master_file):
         for row in reader:
             asin = row['ASIN']
             if asin in keepa_data:
-                # Update values from Keepa_Update after cleaning and converting
+                # Update values from Keepa_Update
                 row['Buy Box: Current'] = keepa_data[asin]['Buy Box: Current']
                 row['New: Current'] = keepa_data[asin]['New: Current']
                 row['New: Highest'] = keepa_data[asin]['New: Highest']
-                # Directly update Lowest FBM Seller
                 row['Lowest FBM Seller'] = keepa_data[asin]['Lowest FBM Seller']
             updated_rows.append(row)
-    
+
     # Step 3: Write Updates Back to MasterV
     with open(master_file, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(updated_rows)
+
     print("Done")
 
 import pandas as pd
